@@ -1,0 +1,21 @@
+// src/utils/pokemonCache.js
+const cache = {
+  names: null,
+  details: {},
+};
+
+export function cacheNames(list) {
+  cache.names = list;
+}
+
+export function getNames() {
+  return cache.names || [];
+}
+
+export function cacheDetails(name, data) {
+  cache.details[name.toLowerCase()] = data;
+}
+
+export function getDetails(name) {
+  return cache.details[name?.toLowerCase()] || null;
+}
