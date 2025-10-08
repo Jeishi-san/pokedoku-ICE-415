@@ -1,67 +1,21 @@
 // src/utils/pokemonCache.js
-
-// In-memory cache structure
 const cache = {
-  names: null,        // stores array of all Pokémon names
-  details: Object.create(null), // stores details keyed by lower-case Pokémon name
+  names: null,
+  details: {},
 };
 
-/**
- * Store full list of Pokémon names
- * @param {string[]} list
- */
 export function cacheNames(list) {
-  cache.names = Array.isArray(list) ? [...list] : [];
+  cache.names = list;
 }
 
-/**
- * Retrieve cached list of Pokémon names
- * @returns {string[]}
- */
 export function getNames() {
   return cache.names || [];
 }
 
-/**
- * Store details for a specific Pokémon
- * @param {string} name - Pokémon name
- * @param {Object} data - Pokémon data object
- */
 export function cacheDetails(name, data) {
-  if (!name || !data) return;
   cache.details[name.toLowerCase()] = data;
 }
 
-/**
- * Retrieve cached details for a specific Pokémon
- * @param {string} name
- * @returns {Object|null}
- */
 export function getDetails(name) {
-  if (!name) return null;
-  return cache.details[name.toLowerCase()] || null;
-}
-
-/**
- * Check if details for a Pokémon are already cached
- * @param {string} name
- * @returns {boolean}
- */
-export function hasDetails(name) {
-  return !!(name && cache.details[name.toLowerCase()]);
-}
-
-/**
- * Clear the entire cache (useful for debugging or force-refresh)
- */
-export function clearCache() {
-  cache.names = null;
-  cache.details = Object.create(null);
-}
-
-/**
- * Expose cache for debugging (optional)
- */
-export function _debugCache() {
-  return JSON.parse(JSON.stringify(cache));
+  return cache.details[name?.toLowerCase()] || null;
 }

@@ -13,6 +13,7 @@ export const REGIONS = [
 
 export const SPECIALS = ["Legendary","Mythical","Starter","Fossil"];
 
+<<<<<<< HEAD
 /**
  * Pick n random unique items from an array
  */
@@ -65,5 +66,29 @@ export function buildGrid(rows, cols) {
       row: rowHeader,
       col: colHeader
     }))
+=======
+export function randomCriteriaList() {
+  // create three row criteria and three column criteria drawing from these categories
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const headerPool = [];
+  for (let i = 0; i < 3; i++) {
+    // random kind
+    const kind = Math.random() < 0.6 ? "type" : (Math.random() < 0.5 ? "region" : "special");
+    const value =
+      kind === "type"
+        ? pick(TYPES)
+        : kind === "region"
+        ? pick(REGIONS)
+        : pick(SPECIALS);
+    headerPool.push({ kind, value });
+  }
+  return headerPool;
+}
+
+export function buildGrid(rows, cols) {
+  // build 3x3 grid combining row/col headers
+  return rows.map(rowHeader =>
+    cols.map(colHeader => ({ row: rowHeader, col: colHeader }))
+>>>>>>> c0a86ffe70fb89df99cc36aa22ff47b91e7ba2a3
   );
 }
