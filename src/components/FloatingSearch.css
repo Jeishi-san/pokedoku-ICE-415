@@ -1,0 +1,98 @@
+/* === Overlay & Panel === */
+.floating-overlay {
+  position: fixed;
+  inset: 0;                       /* top, right, bottom, left: 0 */
+  background: rgba(0, 0, 0, 0.4);  /* dim background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+}
+
+.floating-panel {
+  background: #1f2937;            /* dark gray */
+  color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+  width: 400px;
+  max-height: 500px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === Header === */
+.floating-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #374151; /* slightly lighter gray */
+}
+
+.floating-panel-header h2 {
+  font-size: 1.125rem;
+  font-weight: bold;
+}
+
+.floating-panel-header button {
+  background: none;
+  border: none;
+  color: #d1d5db;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+.floating-panel-header button:hover {
+  color: #ffffff;
+}
+
+/* === Autocomplete wrapper === */
+.autocomplete-wrapper {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #374151;
+  position: relative; /* needed for dropdown absolute positioning */
+}
+
+/* === Autocomplete input === */
+.autocomplete-wrapper input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  background: #374151;
+  color: white;
+  border: none;
+}
+.autocomplete-wrapper input:focus {
+  outline: 2px solid #3b82f6;      /* blue focus ring */
+}
+
+/* === Dropdown list === */
+.autocomplete-wrapper .suggestions {
+  position: absolute;
+  top: 100%;                       /* directly below input */
+  left: 0;
+  right: 0;
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 0 0 0.375rem 0.375rem;
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 60;
+}
+
+.autocomplete-wrapper .suggestions li {
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.autocomplete-wrapper .suggestions li:hover {
+  background: #374151;
+}
+
+.autocomplete-wrapper .suggestions img {
+  width: 32px;
+  height: 32px;
+  margin-right: 0.5rem;
+  pointer-events: none;
+}

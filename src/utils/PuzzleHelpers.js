@@ -13,27 +13,57 @@ export const REGIONS = [
 
 export const SPECIALS = ["Legendary","Mythical","Starter","Fossil"];
 
-export function randomCriteriaList() {
-  // create three row criteria and three column criteria drawing from these categories
-  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-  const headerPool = [];
-  for (let i = 0; i < 3; i++) {
-    // random kind
-    const kind = Math.random() < 0.6 ? "type" : (Math.random() < 0.5 ? "region" : "special");
-    const value =
-      kind === "type"
-        ? pick(TYPES)
-        : kind === "region"
-        ? pick(REGIONS)
-        : pick(SPECIALS);
-    headerPool.push({ kind, value });
+/**
+ * Pick n random unique items from an array
+ */
+function pickRandomUnique(arr, n) {
+  const pool = [...arr];
+  const result = [];
+  while (result.length < n && pool.length > 0) {
+    const idx = Math.floor(Math.random() * pool.length);
+    result.push(pool.splice(idx, 1)[0]);
   }
-  return headerPool;
+  return result;
 }
 
+/**
+ * Generate random criteria list for either rows or columns
+ * Each entry is { kind: 'type'|'region'|'special', value: string }
+ */
+export function randomCriteriaList() {
+  const headers = [];
+
+  // For variety: roughly 60% types, 25% regions, 15% specials
+  for (let i = 0; i < 3; i++) {
+    const r = Math.random();
+    let kind, value;
+
+    if (r < 0.6) {
+      kind = "type";
+      value = pickRandomUnique(TYPES, 1)[0];
+    } else if (r < 0.85) {
+      kind = "region";
+      value = pickRandomUnique(REGIONS, 1)[0]; // ✅ same region strings as generationToRegion
+    } else {
+      kind = "special";
+      value = pickRandomUnique(SPECIALS, 1)[0];
+    }
+
+    headers.push({ kind, value });
+  }
+
+  return headers;
+}
+
+/**
+ * Build 3×3 grid by combining row and column criteria
+ * Each cell is { row: {kind,value}, col: {kind,value} }
+ */
 export function buildGrid(rows, cols) {
-  // build 3x3 grid combining row/col headers
   return rows.map(rowHeader =>
-    cols.map(colHeader => ({ row: rowHeader, col: colHeader }))
+    cols.map(colHeader => ({
+      row: rowHeader,
+      col: colHeader
+    }))
   );
 }
