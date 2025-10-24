@@ -1,29 +1,41 @@
 // src/components/Autocomplete.jsx
-import React, { useState, useEffect } from "react";
-import useDebounce from "../hooks/useDebounce"; // ✅ fixed filename
+import React, { useEffect, useState } from "react";
+import useDebounce from "../hooks/useDebounce";
 
-export default function Autocomplete({ namesList, onSelect, placeholder = "Type a Pokémon..." }) {
+export default function Autocomplete({
+  namesList = [],
+  onSelect,
+  placeholder = "Type a Pokémon...",
+  renderSelectButton = false,
+}) {
   const [input, setInput] = useState("");
-  const debounced = useDebounce(input, 200);
   const [suggestions, setSuggestions] = useState([]);
+  const debounced = useDebounce(input, 200);
 
+  // 🔍 Filter suggestions on input
   useEffect(() => {
-    if (!debounced) {
+    if (!debounced || namesList.length === 0) {
       setSuggestions([]);
       return;
     }
+
     const q = debounced.toLowerCase();
 
-    // ✅ Support both strings & objects
     const matches = namesList
       .filter((p) =>
-        (typeof p === "string" ? p : p.name).toLowerCase().startsWith(q)
+        (typeof p === "string" ? p : p.name).toLowerCase().includes(q)
       )
-      .slice(0, 8)
+      .slice(0, 10)
       .map((p) => (typeof p === "string" ? { name: p, image: null } : p));
 
     setSuggestions(matches);
   }, [debounced, namesList]);
+
+  // ✅ Handle selection
+  const handleSelect = (p) => {
+    setInput("");
+    onSelect(p.name);
+  };
 
   return (
     <div className="autocomplete">
@@ -31,26 +43,36 @@ export default function Autocomplete({ namesList, onSelect, placeholder = "Type 
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder={placeholder}
+        className="autocomplete-input"
       />
+
       {suggestions.length > 0 && (
         <ul className="suggestions">
           {suggestions.map((p) => (
-            <li
-              key={p.name}
-              onClick={() => {
-                setInput("");
-                onSelect(p.name);
-              }}
-            >
-              {p.image && (
+            <li key={p.name} className="suggestion-item">
+              {p.image ? (
                 <img
                   src={p.image}
                   alt={p.name}
+                  className="suggestion-img"
                   width={36}
-                  style={{ verticalAlign: "middle" }}
+                  height={36}
+                />
+              ) : (
+                <div className="suggestion-placeholder" />
+              )}
+              <span className="suggestion-name">{p.name}</span>
+
+              {renderSelectButton ? (
+                <button className="select-btn" onClick={() => handleSelect(p)}>
+                  Select
+                </button>
+              ) : (
+                <span
+                  onClick={() => handleSelect(p)}
+                  className="click-overlay"
                 />
               )}
-              <span style={{ marginLeft: 8 }}>{p.name}</span>
             </li>
           ))}
         </ul>

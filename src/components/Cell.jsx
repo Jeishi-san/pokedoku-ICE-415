@@ -1,38 +1,33 @@
+// src/components/Cell.jsx
 import React from "react";
+import "./PuzzleGrid.css";
 
-export default function Cell({ rIdx, cIdx, value, onClick, status, style }) {
+export default function Cell({ rIdx, cIdx, value, onClick, status = "", style = {} }) {
   const handleClick = () => onClick(rIdx, cIdx);
 
   return (
     <div
-      className={`cell ${status || "empty"}`}
+      className={`cell ${status} ${value ? "filled" : "empty"}`}
       onClick={handleClick}
-      style={{
-        border: "1px solid #ccc",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        background: status === "valid" ? "#d4f7d4" : "#fff",
-        ...style,
-      }}
+      style={style}
+      title={value ? value.name : "Click to select Pokémon"}
     >
-      <div className="entry">
-        {value ? (
-          <>
+      {value && value.name ? (
+        <div className="entry">
+          {value.image ? (
             <img
               src={value.image}
               alt={value.name}
-              width={48}
-              height={48}
               className="pokemon-img"
             />
-            <div className="name">{value.name}</div>
-          </>
-        ) : (
-          <span className="placeholder">?</span>
-        )}
-      </div>
+          ) : (
+            <div className="pokemon-placeholder">❓</div>
+          )}
+          <div className="name">{value.name}</div>
+        </div>
+      ) : (
+        <span className="placeholder">?</span>
+      )}
     </div>
   );
 }

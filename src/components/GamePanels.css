@@ -1,0 +1,280 @@
+/* src/components/GamePanels.css */
+
+/* 🎉 Celebration Panel Styles */
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.celebration-card {
+  background: linear-gradient(145deg, #ffffff, #f7f7f7);
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  width: 90%;
+  max-width: 450px;
+  position: relative;
+}
+
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  font-size: 1.6rem;
+  color: #555;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.close-button:hover {
+  color: #000;
+}
+
+.celebration-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sparkle-icon {
+  color: #f4b400;
+  width: 3rem;
+  height: 3rem;
+  animation: bounce 2s infinite;
+}
+
+.celebration-content h2 {
+  font-size: 2rem;
+  margin: 0;
+  color: #333;
+  font-weight: 700;
+}
+
+.celebration-content p {
+  font-size: 1.1rem;
+  margin: 0;
+  color: #666;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.primary-button {
+  background: #4285f4;
+  color: white;
+  padding: 0.8rem 1.8rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.primary-button:hover {
+  background: #3367d6;
+  transform: scale(1.05);
+}
+
+.secondary-button {
+  background: #f1f1f1;
+  color: #333;
+  padding: 0.8rem 1.8rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.secondary-button:hover {
+  background: #e0e0e0;
+  transform: scale(1.05);
+}
+
+/* 💀 Lose Panel Styles */
+.lose-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.lose-card {
+  background: linear-gradient(145deg, #2c2c2c, #1e1e1e);
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  text-align: center;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.35);
+  width: 90%;
+  max-width: 450px;
+  position: relative;
+  color: #f9f9f9;
+}
+
+.lose-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.skull-icon {
+  color: #ff4b4b;
+  width: 3rem;
+  height: 3rem;
+  animation: pulse 1.8s infinite;
+}
+
+.lose-content h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  color: #ff4b4b;
+}
+
+.lose-content p {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #ddd;
+}
+
+.lose-tip {
+  font-size: 0.9rem;
+  color: #aaa;
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+/* 📜 Rules Panel Styles */
+.rules-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.rules-panel {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  text-align: left;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.rules-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-icon {
+  color: #4285f4;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.rules-header h2 {
+  font-size: 1.8rem;
+  color: #222;
+  margin: 0;
+}
+
+.rules-content {
+  color: #333;
+}
+
+.rules-content p {
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.rules-content ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+  line-height: 1.6;
+}
+
+.rules-content li {
+  margin-bottom: 0.5rem;
+}
+
+.rules-tip {
+  font-size: 0.9rem;
+  font-style: italic;
+  color: #666;
+  margin-top: 1rem;
+}
+
+.rules-footer {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+/* 🔁 Animations */
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.85;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
