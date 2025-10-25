@@ -1,12 +1,47 @@
-# React + Vite
+# PokéDoku
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A project/Learning Evidence for ICE-414
 
-Currently, two official plugins are available:
+A full-stack Pokémon-themed logic puzzle game inspired by Sudoku, built with modern web technologies.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🎮 About the Game
 
-## Expanding the ESLint configuration
+PokéDoku challenges players to fill a 3×3 grid with Pokémon that match both row and column criteria. Each Pokémon can only be used once, and players must use their Pokémon knowledge to complete the puzzle successfully.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Tech Stack
+
+- **Frontend**: React + Vite
+- **Backend**: Node.js + Express
+- **Styling**: Tailwind CSS + Custom CSS
+- **Data**: Pokémon API integration
+- **State Management**: React Hooks
+
+## 🏗️ Project Structure
+
+```
+pokedoku/
+├── server/          # Express backend with Pokémon API routes
+├── src/
+│   ├── components/  # React components (grid, panels, search)
+│   ├── utils/       # Game logic & Pokémon data utilities
+│   ├── hooks/       # Custom React hooks
+│   └── styles/      # CSS and styling files
+```
+
+## 🚀 Features
+
+- Interactive 3×3 puzzle grid
+- Real-time Pokémon search and selection
+- Criteria matching validation
+- Celebration animations on completion
+- Responsive design
+- Pokémon data caching for performance
+
+## 🎯 How to Play
+
+1. Each cell must contain a Pokémon that matches both its row and column criteria
+2. Pokémon cannot be reused in the same puzzle
+3. Complete all 9 cells to win
+4. Criteria include types, regions, legendary status, and more
+
+Built for Pokémon fans who love logic puzzles!  
