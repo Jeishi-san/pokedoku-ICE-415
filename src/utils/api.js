@@ -1,5 +1,4 @@
-// ✅ pokedoku/src/utils/api.js - Fixed Pokémon API Client
-
+// ✅ pokedoku/src/utils/api.js - With Server-Side Validation
 const BASE_URL =
   import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "http://localhost:3001";
 const API = `${BASE_URL}/api/pokemon`;
@@ -36,6 +35,38 @@ export const pingBackend = async () => {
     return null;
   }
 };
+
+/* -------------------------------------------------------------------------- */
+/* 🎯 POKÉDOKU SERVER-SIDE VALIDATION                                         */
+/* -------------------------------------------------------------------------- */
+export async function validatePokemon(name, rowCrit, colCrit) {
+  try {
+    const validationResult = await safeFetch(`${API}/validate`, {
+      method: "POST",
+      body: JSON.stringify({ 
+        name, 
+        rowCriterion: rowCrit, 
+        colCriterion: colCrit 
+      }),
+    });
+
+    console.log(`🎯 Validation result for ${name}:`, validationResult);
+    return validationResult;
+    
+  } catch (error) {
+    console.error("❌ Validation API Error:", error);
+    
+    // Return fallback result for offline/local development
+    return {
+      isValid: false,
+      pokemon: name,
+      rowCriterion: rowCrit?.type,
+      colCriterion: colCrit?.type,
+      error: "Validation service unavailable",
+      fallback: true
+    };
+  }
+}
 
 /* -------------------------------------------------------------------------- */
 /* 🧠 Name Normalization (Simplified)                                         */
@@ -246,6 +277,7 @@ export default {
   fetchAllPokemonNamesLazy,
   fetchSpeciesByName,
   fetchPokemonDetails,
+  validatePokemon, // ✅ NEW EXPORT
   normalizeName,
   debugBackendResponse, // Optional: for troubleshooting
 };

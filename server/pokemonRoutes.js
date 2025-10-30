@@ -1,9 +1,10 @@
-// ✅ server/pokemonRoutes.js (Simplified - No Sprite Proxy)
+// ✅ server/pokemonRoutes.js (With Validation Endpoint)
 import express from "express";
 import {
   getAllPokemonNames,
   getPokemonSpecies,
   getPokemonById,
+  validatePokemonCriteria, // ✅ NEW IMPORT
   testPokemon,
   bulkTestPokemon,
   debugEvolution,
@@ -65,6 +66,9 @@ router.get("/species/:name", validateNameParam, getPokemonSpecies);
 
 // ✅ Get Pokémon by ID
 router.get("/id/:id", validateIdParam, getPokemonById);
+
+// ✅ NEW: Server-side Pokédoku validation
+router.post("/validate", validatePokemonCriteria);
 
 /* -------------------------------------------------------------------------- */
 /* 🧪 Debug / Testing Endpoints (Only active in development) */

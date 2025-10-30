@@ -401,3 +401,59 @@ export function safeAnalyzeEvolutionChain(chain, targetName) {
     };
   }
 }
+
+// ✅ ADDED: Get evolution stage from Pokémon data
+/* -------------------------------------------------------------------------- */
+/* 🆕 NEW: Get evolution stage from Pokémon data */
+/* -------------------------------------------------------------------------- */
+export function getEvolutionStage(pokemonData) {
+  if (!pokemonData) {
+    console.warn('⚠️ getEvolutionStage: No Pokémon data provided');
+    return "Unknown";
+  }
+
+  try {
+    // Check if evolution data is directly available
+    if (pokemonData.evolution) {
+      return pokemonData.evolution;
+    }
+
+    // Check evolution chain summary
+    if (pokemonData.evolution_chain_summary) {
+      return pokemonData.evolution_chain_summary;
+    }
+
+    // Try to determine from evolution chain analysis
+    if (pokemonData.evolution_chain?.url) {
+      // This would require fetching the chain, but for simplicity:
+      const name = pokemonData.name || 'unknown';
+      
+      // Simple heuristic based on common patterns
+      if (name.includes('-mega') || name.includes('-gmax')) {
+        return "Final Stage"; // Mega/Gigantamax forms are typically final
+      }
+      
+      // Basic stage detection from name patterns (fallback)
+      const baseName = name.split('-')[0];
+      const finalStages = [
+        'charizard', 'blastoise', 'venusaur', 'butterfree', 'beedrill',
+        'pidgeot', 'fearow', 'arbok', 'raichu', 'sandslash', 'nidoqueen',
+        'nidoking', 'clefable', 'ninetales', 'wigglytuff', 'golbat', 'vileplume'
+        // Add more as needed
+      ];
+      
+      if (finalStages.includes(baseName)) {
+        return "Final Stage";
+      }
+      
+      return "Base Stage"; // Default fallback
+    }
+
+    console.log(`🔍 No evolution data found for ${pokemonData.name}, using fallback`);
+    return "Unknown";
+
+  } catch (error) {
+    console.error(`💥 Error in getEvolutionStage for ${pokemonData?.name}:`, error);
+    return "Unknown";
+  }
+}

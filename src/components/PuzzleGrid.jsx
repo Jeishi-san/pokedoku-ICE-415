@@ -1,14 +1,14 @@
-// ✅ src/components/PuzzleGrid.jsx (Fixed import issues)
+// ✅ src/components/PuzzleGrid.jsx (With Server-Side Validation)
 import React, { useState, useCallback, useMemo } from "react";
 import Cell from "./Cell";
 import FloatingSearchPanel from "./FloatingSearch";
 import "./PuzzleGrid.css";
 
 // FIXED: Import correct functions from api.js
-import { fetchSpeciesByName, normalizeName } from "../utils/api";
+import { fetchSpeciesByName, normalizeName, validatePokemon } from "../utils/api"; // ✅ ADDED validatePokemon
 import { getSpeciesByName, cacheSpeciesByName } from "../utils/Pokemoncache";
 import { getCriteriaStyle } from "../utils/criteriaStyles";
-import { matchesCriterion } from "../utils/criteria";
+import { matchesCriterion } from "../utils/criteria"; // Keep for fallback
 
 export default function PuzzleGrid({ initialGrid = [], onGridComplete }) {
   const safeGrid =
@@ -95,7 +95,7 @@ export default function PuzzleGrid({ initialGrid = [], onGridComplete }) {
   );
 
   /* -------------------------------------------------------------------------- */
-  /* 🧩 Pokémon selection handler (UPDATED)                                    */
+  /* 🧩 Pokémon selection handler (UPDATED WITH SERVER-SIDE VALIDATION)        */
   /* -------------------------------------------------------------------------- */
   const handleSelectPokemon = useCallback(
     async (name) => {
@@ -130,7 +130,7 @@ export default function PuzzleGrid({ initialGrid = [], onGridComplete }) {
           generation: speciesData?.generation || "Unknown",
         };
 
-        // ✅ Update state
+        // ✅ Update state immediately with the Pokémon entry
         setEntries((prev) => {
           const newEntries = prev.map((row) => [...row]);
           newEntries[r][c] = entry;
@@ -139,9 +139,22 @@ export default function PuzzleGrid({ initialGrid = [], onGridComplete }) {
 
         const rowCrit = safeGrid[r][c].row;
         const colCrit = safeGrid[r][c].col;
-        const isValid =
-          matchesCriterion(entry, rowCrit) && matchesCriterion(entry, colCrit);
 
+        // 🎯 SERVER-SIDE VALIDATION
+        let isValid = false;
+        try {
+          console.log(`🎯 Validating ${name} at [${r},${c}]...`);
+          const validationResult = await validatePokemon(name, rowCrit, colCrit);
+          isValid = validationResult.isValid;
+          console.log(`✅ Server validation result for ${name}:`, isValid);
+        } catch (validationError) {
+          console.warn("⚠️ Server validation failed, using client-side fallback:", validationError);
+          // Fallback to client-side validation
+          isValid = matchesCriterion(entry, rowCrit) && matchesCriterion(entry, colCrit);
+          console.log(`🔄 Client-side fallback result for ${name}:`, isValid);
+        }
+
+        // ✅ Update status based on validation result
         setStatuses((prev) => {
           const newStatuses = prev.map((row) => [...row]);
           newStatuses[r][c] = isValid ? "valid" : "invalid";
@@ -153,13 +166,17 @@ export default function PuzzleGrid({ initialGrid = [], onGridComplete }) {
 
         // ✅ Check completion
         setTimeout(() => {
-          const allValid = statuses.flat().every((s) => s === "valid");
           const newStatusesFlat = [...statuses];
           newStatusesFlat[r][c] = isValid ? "valid" : "invalid";
           const newAllValid = newStatusesFlat.flat().every((s) => s === "valid");
           
-          if (newAllValid) onGridComplete?.(true);
-          else if (movesLeft - 1 <= 0) onGridComplete?.(false);
+          if (newAllValid) {
+            console.log("🎉 Puzzle completed successfully!");
+            onGridComplete?.(true);
+          } else if (movesLeft - 1 <= 0) {
+            console.log("💔 Out of moves - puzzle failed");
+            onGridComplete?.(false);
+          }
         }, 100);
 
       } catch (err) {
@@ -277,6 +294,7 @@ export default function PuzzleGrid({ initialGrid = [], onGridComplete }) {
       <div className="game-info">
         <div>🎮 Moves Left: {movesLeft}</div>
         <div>📊 Used Pokémon: {usedPokemon.size}</div>
+        <div className="validation-info">🎯 Server-Side Validation: Active</div>
       </div>
     </div>
   );

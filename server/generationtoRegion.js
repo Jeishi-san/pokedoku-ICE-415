@@ -126,3 +126,55 @@ function detectMethod(name) {
   if (/-primal/.test(n)) return "primal-form";
   return "generation-mapping";
 }
+
+// ✅ ADDED: Get region from generation number (for validation)
+export function getRegionFromGeneration(generation) {
+  if (!generation || isNaN(generation)) {
+    console.warn('⚠️ getRegionFromGeneration: Invalid generation provided:', generation);
+    return 'unknown';
+  }
+
+  const gen = parseInt(generation);
+  
+  const generationToRegionMap = {
+    1: 'kanto',
+    2: 'johto', 
+    3: 'hoenn',
+    4: 'sinnoh',
+    5: 'unova',
+    6: 'kalos',
+    7: 'alola',
+    8: 'galar',
+    9: 'paldea'
+  };
+
+  const region = generationToRegionMap[gen]?.toLowerCase() || 'unknown';
+  console.log(`🗺️ Generation ${gen} → Region: ${region}`);
+  return region;
+}
+
+// ✅ ADDED: Get generation from region name (reverse mapping)
+export function getGenerationFromRegion(region) {
+  if (!region || typeof region !== 'string') {
+    console.warn('⚠️ getGenerationFromRegion: Invalid region provided:', region);
+    return 1;
+  }
+
+  const regionLower = region.toLowerCase();
+  
+  const regionToGenerationMap = {
+    'kanto': 1,
+    'johto': 2,
+    'hoenn': 3,
+    'sinnoh': 4,
+    'unova': 5,
+    'kalos': 6,
+    'alola': 7,
+    'galar': 8,
+    'paldea': 9
+  };
+
+  const generation = regionToGenerationMap[regionLower] || 1;
+  console.log(`🔄 Region ${regionLower} → Generation: ${generation}`);
+  return generation;
+}

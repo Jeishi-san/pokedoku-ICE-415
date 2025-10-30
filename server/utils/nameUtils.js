@@ -194,3 +194,96 @@ export function testNameNormalization() {
     console.log(`  ${status} ${test.input} → ${result} (expected: ${test.expected})`);
   });
 }
+
+// ✅ ADD THIS FUNCTION to server/utils/nameUtils.js
+
+/* -------------------------------------------------------------------------- */
+/* 🆕 NEW: Get generation from Pokémon name */
+/* -------------------------------------------------------------------------- */
+export function getGenerationFromName(pokemonName) {
+  if (!pokemonName || typeof pokemonName !== 'string') {
+    console.warn('⚠️ getGenerationFromName: Invalid Pokémon name provided');
+    return 1; // Default to Gen 1
+  }
+
+  const name = pokemonName.toLowerCase().trim();
+  
+  // Generation mapping based on Pokémon ID ranges or known patterns
+  // This is a simplified version - you might want to enhance this with actual ID ranges
+  
+  // Gen 1 (IDs 1-151)
+  const gen1Pokemon = [
+    'bulbasaur', 'ivysaur', 'venusaur', 'charmander', 'charmeleon', 'charizard',
+    'squirtle', 'wartortle', 'blastoise', 'caterpie', 'metapod', 'butterfree',
+    'weedle', 'kakuna', 'beedrill', 'pidgey', 'pidgeotto', 'pidgeot', 'rattata',
+    'raticate', 'spearow', 'fearow', 'ekans', 'arbok', 'pikachu', 'raichu',
+    'sandshrew', 'sandslash', 'nidoran-f', 'nidorina', 'nidoqueen', 'nidoran-m',
+    'nidorino', 'nidoking', 'clefairy', 'clefable', 'vulpix', 'ninetales',
+    'jigglypuff', 'wigglytuff', 'zubat', 'golbat', 'oddish', 'gloom', 'vileplume',
+    'paras', 'parasect', 'venonat', 'venomoth', 'diglett', 'dugtrio', 'meowth',
+    'persian', 'psyduck', 'golduck', 'mankey', 'primeape', 'growlithe', 'arcanine',
+    'poliwag', 'poliwhirl', 'poliwrath', 'abra', 'kadabra', 'alakazam', 'machop',
+    'machoke', 'machamp', 'bellsprout', 'weepinbell', 'victreebel', 'tentacool',
+    'tentacruel', 'geodude', 'graveler', 'golem', 'ponyta', 'rapidash', 'slowpoke',
+    'slowbro', 'magnemite', 'magneton', 'farfetchd', 'doduo', 'dodrio', 'seel',
+    'dewgong', 'grimer', 'muk', 'shellder', 'cloyster', 'gastly', 'haunter', 'gengar',
+    'onix', 'drowzee', 'hypno', 'krabby', 'kingler', 'voltorb', 'electrode', 'exeggcute',
+    'exeggutor', 'cubone', 'marowak', 'hitmonlee', 'hitmonchan', 'lickitung', 'koffing',
+    'weezing', 'rhyhorn', 'rhydon', 'chansey', 'tangela', 'kangaskhan', 'horsea',
+    'seadra', 'goldeen', 'seaking', 'staryu', 'starmie', 'mr-mime', 'scyther',
+    'jynx', 'electabuzz', 'magmar', 'pinsir', 'tauros', 'magikarp', 'gyarados',
+    'lapras', 'ditto', 'eevee', 'vaporeon', 'jolteon', 'flareon', 'porygon',
+    'omanyte', 'omastar', 'kabuto', 'kabutops', 'aerodactyl', 'snorlax',
+    'articuno', 'zapdos', 'moltres', 'dratini', 'dragonair', 'dragonite',
+    'mewtwo', 'mew'
+  ];
+
+  // Gen 2 (IDs 152-251)
+  const gen2Pokemon = [
+    'chikorita', 'bayleef', 'meganium', 'cyndaquil', 'quilava', 'typhlosion',
+    'totodile', 'croconaw', 'feraligatr', 'sentret', 'furret', 'hoothoot',
+    'noctowl', 'ledyba', 'ledian', 'spinarak', 'ariados', 'crobat', 'chinchou',
+    'lanturn', 'pichu', 'cleffa', 'igglybuff', 'togepi', 'togetic', 'natu',
+    'xatu', 'mareep', 'flaaffy', 'ampharos', 'bellossom', 'marill', 'azumarill',
+    'sudowoodo', 'politoed', 'hoppip', 'skiploom', 'jumpluff', 'aipom', 'sunkern',
+    'sunflora', 'yanma', 'wooper', 'quagsire', 'espeon', 'umbreon', 'murkrow',
+    'slowking', 'misdreavus', 'unown', 'wobbuffet', 'girafarig', 'pineco',
+    'forretress', 'dunsparce', 'gligar', 'steelix', 'snubbull', 'granbull',
+    'qwilfish', 'scizor', 'shuckle', 'heracross', 'sneasel', 'teddiursa',
+    'ursaring', 'slugma', 'magcargo', 'swinub', 'piloswine', 'corsola',
+    'remoraid', 'octillery', 'delibird', 'mantine', 'skarmory', 'houndour',
+    'houndoom', 'kingdra', 'phanpy', 'donphan', 'porygon2', 'stantler',
+    'smeargle', 'tyrogue', 'hitmontop', 'smoochum', 'elekid', 'magby',
+    'miltank', 'blissey', 'raikou', 'entei', 'suicune', 'larvitar',
+    'pupitar', 'tyranitar', 'lugia', 'ho-oh', 'celebi'
+  ];
+
+  // Check generations (you can expand this for more generations)
+  if (gen1Pokemon.includes(name)) return 1;
+  if (gen2Pokemon.includes(name)) return 2;
+  
+  // For forms/variants, check the base name
+  const baseName = name.split('-')[0];
+  if (gen1Pokemon.includes(baseName)) return 1;
+  if (gen2Pokemon.includes(baseName)) return 2;
+
+  // Default fallback - you might want to expand this with more generations
+  console.log(`🔍 Using default generation for ${name}, consider expanding generation mapping`);
+  return 1; // Default to Gen 1
+}
+
+export function getRegionFromGeneration(generation) {
+  const regionMap = {
+    1: 'kanto',
+    2: 'johto', 
+    3: 'hoenn',
+    4: 'sinnoh',
+    5: 'unova',
+    6: 'kalos',
+    7: 'alola',
+    8: 'galar',
+    9: 'paldea'
+  };
+  
+  return regionMap[generation] || 'unknown';
+}

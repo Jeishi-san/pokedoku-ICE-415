@@ -1,9 +1,13 @@
-// ✅ server/services/pokemonService.js (Enhanced Safety Version)
+// ✅ server/services/pokemonService.js (With Server-Side Validation + Enhanced Safety)
 import { graphqlFetch, fetchWithTimeout } from "../utils/apiClient.js";
 import { normalizeVariantName } from "../utils/nameUtils.js";
 import { analyzeEvolutionChain, normalizeGraphQLEvolutionResponse } from "../utils/evolutionUtils.js";
 import { handleSpecialForms } from "../utils/specialForms.js";
 import { getPokemonRegion, getSpecialStatuses } from "../utils/pokemonData.js";
+import { getGenerationFromName } from "../utils/nameUtils.js";
+// This should now work in pokemonService.js
+import { getRegionFromGeneration } from "../generationtoRegion.js";
+import { getEvolutionStage } from "../utils/evolutionUtils.js";
 
 const REST_BASE = "https://pokeapi.co/api/v2/";
 
@@ -125,6 +129,126 @@ function safeJsonParse(data, defaultValue = {}) {
   } catch (error) {
     logError('safeJsonParse', 'Failed to parse JSON', error);
     return defaultValue;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🎯 POKÉDOKU SERVER-SIDE VALIDATION LOGIC                                   */
+/* -------------------------------------------------------------------------- */
+export async function validatePokemonLogic(name, rowCriterion, colCriterion) {
+  try {
+    const cleanName = validatePokemonName(name, "VALIDATION");
+    
+    // Fetch Pokémon data with caching
+    let pokemonData = cache.get(cleanName, 'species');
+    if (!pokemonData) {
+      pokemonData = await fetchSpeciesData(cleanName, "VALIDATION");
+    }
+
+    if (!pokemonData) {
+      log(`[validatePokemonLogic] No data found for ${cleanName}`);
+      return false;
+    }
+
+    // Validate against both criteria
+    const rowValid = await matchesCriterion(pokemonData, rowCriterion);
+    const colValid = await matchesCriterion(pokemonData, colCriterion);
+
+    log(`[validatePokemonLogic] ${cleanName} - Row: ${rowValid} (${rowCriterion.type}), Col: ${colValid} (${colCriterion.type})`);
+    return rowValid && colValid;
+    
+  } catch (error) {
+    logError('validatePokemonLogic', `Failed to validate ${name}`, error);
+    return false;
+  }
+}
+
+// Server-side implementation of criterion matching
+async function matchesCriterion(pokemon, criterion) {
+  if (!criterion || !pokemon) {
+    log(`[matchesCriterion] Missing criterion or pokemon data`);
+    return false;
+  }
+
+  const { type, value } = criterion;
+  
+  log(`[matchesCriterion] Checking ${pokemon.name} against ${type}: ${value}`);
+  
+  switch (type) {
+    case 'type':
+      return pokemon.types && pokemon.types.includes(value);
+    
+    case 'region':
+      const generation = getGenerationFromName(pokemon.name);
+      const region = getRegionFromGeneration(generation);
+      const regionMatch = region === value;
+      log(`[matchesCriterion] Region check: ${pokemon.name} -> Gen ${generation} -> ${region} === ${value} = ${regionMatch}`);
+      return regionMatch;
+    
+    case 'evolution':
+      const stage = getEvolutionStage(pokemon);
+      const evolutionMatch = stage === value;
+      log(`[matchesCriterion] Evolution check: ${pokemon.name} -> ${stage} === ${value} = ${evolutionMatch}`);
+      return evolutionMatch;
+    
+    case 'dualtype':
+      if (!pokemon.types || pokemon.types.length !== 2) return false;
+      const [type1, type2] = value.split('/');
+      const dualTypeMatch = pokemon.types.includes(type1) && pokemon.types.includes(type2);
+      log(`[matchesCriterion] DualType check: ${pokemon.types} includes ${type1} and ${type2} = ${dualTypeMatch}`);
+      return dualTypeMatch;
+    
+    case 'color':
+      return await checkPokemonColor(pokemon, value);
+    
+    case 'legendary':
+      const isLegendary = pokemon.statuses?.includes('legendary') || false;
+      const legendaryMatch = isLegendary === (value === 'legendary');
+      log(`[matchesCriterion] Legendary check: ${isLegendary} === ${value === 'legendary'} = ${legendaryMatch}`);
+      return legendaryMatch;
+    
+    case 'mythical':
+      const isMythical = pokemon.statuses?.includes('mythical') || false;
+      const mythicalMatch = isMythical === (value === 'mythical');
+      log(`[matchesCriterion] Mythical check: ${isMythical} === ${value === 'mythical'} = ${mythicalMatch}`);
+      return mythicalMatch;
+    
+    case 'generation':
+      const pokemonGeneration = getGenerationFromName(pokemon.name);
+      const generationMatch = pokemonGeneration.toString() === value;
+      log(`[matchesCriterion] Generation check: ${pokemonGeneration} === ${value} = ${generationMatch}`);
+      return generationMatch;
+    
+    default:
+      log(`[matchesCriterion] Unknown criterion type: ${type}`);
+      return false;
+  }
+}
+
+// Helper function for color matching
+async function checkPokemonColor(pokemon, color) {
+  try {
+    // This would need to be implemented based on your color data source
+    // For now, using a simple mapping approach
+    const colorMap = {
+      'red': ['charizard', 'gyarados', 'scizor', 'volcarona', 'flareon'],
+      'blue': ['blastoise', 'vaporeon', 'lugia', 'suicune', 'squirtle'],
+      'green': ['bulbasaur', 'sceptile', 'rayquaza', 'leafeon', 'caterpie'],
+      'yellow': ['pikachu', 'raichu', 'jolteon', 'zapdos', 'luxray'],
+      'pink': ['jigglypuff', 'clefairy', 'sylveon', 'mew', 'chansey'],
+      'brown': ['teddiursa', 'ursaring', 'cubone', 'marowak', 'diglett'],
+      'purple': ['gengar', 'nidoking', 'muk', 'dragonite', 'mewtwo'],
+      'black': ['umbreon', 'darkrai', 'houndoom', 'yveltal', 'absol'],
+      'white': ['arcanine', 'articuno', 'glaceon', 'kyurem', 'zoroark'],
+      'gray': ['steelix', 'metagross', 'registeel', 'aggron', 'duraludon']
+    };
+    
+    const colorMatch = colorMap[color]?.includes(pokemon.name.toLowerCase()) || false;
+    log(`[checkPokemonColor] ${pokemon.name} color check: ${color} = ${colorMatch}`);
+    return colorMatch;
+  } catch (error) {
+    logError('checkPokemonColor', `Failed to check color for ${pokemon.name}`, error);
+    return false;
   }
 }
 
@@ -381,7 +505,6 @@ async function buildPokemonDataFromREST(normalizedName, species, pokemonData) {
 
   return handleSpecialForms(normalizedName, baseResult);
 }
-
 
 /* -------------------------------------------------------------------------- */
 /* 🧬 EVOLUTION CHAIN PROCESSING                                               */

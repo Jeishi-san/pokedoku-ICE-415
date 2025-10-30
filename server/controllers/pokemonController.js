@@ -1,5 +1,5 @@
-// ✅ server/controllers/pokemonController.js (With Sprite URL Support)
-import { fetchSpeciesData } from "../services/pokemonService.js";
+// ✅ server/controllers/pokemonController.js (With Server-Side Validation + Sprite URL Support)
+import { fetchSpeciesData, validatePokemonLogic } from "../services/pokemonService.js";
 import { graphqlFetch, fetchWithTimeout } from "../utils/apiClient.js";
 import { normalizeVariantName, getPokemonSpriteUrl } from "../utils/nameUtils.js";
 import { handleSpecialForms } from "../utils/specialForms.js";
@@ -130,6 +130,50 @@ async function fetchWithFallback({ graphqlQuery, graphqlVars, restUrl, transform
     if (!res.ok) throw new Error(`REST fetch failed: ${res.status}`);
     const json = await res.json();
     return transform(json);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* 🎯 POKÉDOKU SERVER-SIDE VALIDATION                                         */
+/* -------------------------------------------------------------------------- */
+export async function validatePokemonCriteria(req, res) {
+  try {
+    const { name, rowCriterion, colCriterion } = req.body;
+    
+    if (!name || !rowCriterion || !colCriterion) {
+      return res.status(400).json({ 
+        error: "Missing required parameters: name, rowCriterion, colCriterion" 
+      });
+    }
+
+    const cleanName = validatePokemonName(name);
+    
+    log(`🔍 Validating ${cleanName} for row:${rowCriterion.type} col:${colCriterion.type}`);
+    
+    const isValid = await validatePokemonLogic(cleanName, rowCriterion, colCriterion);
+    
+    res.json({ 
+      isValid,
+      pokemon: cleanName,
+      rowCriterion: rowCriterion.type,
+      colCriterion: colCriterion.type,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (err) {
+    console.error("❌ Validation Error:", err);
+    
+    if (err.message.includes('Invalid') || err.message.includes('must be')) {
+      return res.status(400).json({ 
+        error: `Invalid request: ${err.message}` 
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Pokémon validation failed",
+      details: err.message,
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
   }
 }
 
