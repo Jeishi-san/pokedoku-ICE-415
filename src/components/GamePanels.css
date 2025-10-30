@@ -9,7 +9,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 10010; /* Increased to be above search panels */
+  animation: panelFadeIn 0.3s ease-out; /* Renamed animation */
 }
 
 .celebration-card {
@@ -21,6 +22,7 @@
   width: 90%;
   max-width: 450px;
   position: relative;
+  animation: panelSlideUp 0.3s ease-out; /* Renamed animation */
 }
 
 .close-button {
@@ -33,10 +35,17 @@
   color: #555;
   cursor: pointer;
   transition: color 0.2s ease;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
 }
 
 .close-button:hover {
   color: #000;
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .celebration-content {
@@ -50,7 +59,7 @@
   color: #f4b400;
   width: 3rem;
   height: 3rem;
-  animation: bounce 2s infinite;
+  animation: iconBounce 2s infinite; /* Renamed animation */
 }
 
 .celebration-content h2 {
@@ -70,17 +79,24 @@
   display: flex;
   gap: 1rem;
   margin-top: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.primary-button {
-  background: #4285f4;
-  color: white;
+.primary-button, .secondary-button {
   padding: 0.8rem 1.8rem;
   font-size: 1rem;
   border: none;
   border-radius: 9999px;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  min-width: 120px;
+}
+
+.primary-button {
+  background: #4285f4;
+  color: white;
 }
 
 .primary-button:hover {
@@ -91,12 +107,6 @@
 .secondary-button {
   background: #f1f1f1;
   color: #333;
-  padding: 0.8rem 1.8rem;
-  font-size: 1rem;
-  border: none;
-  border-radius: 9999px;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
 }
 
 .secondary-button:hover {
@@ -113,7 +123,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 10010; /* Increased to be above search panels */
+  animation: panelFadeIn 0.3s ease-out; /* Renamed animation */
 }
 
 .lose-card {
@@ -126,6 +137,7 @@
   max-width: 450px;
   position: relative;
   color: #f9f9f9;
+  animation: panelSlideUp 0.3s ease-out; /* Renamed animation */
 }
 
 .lose-content {
@@ -139,7 +151,7 @@
   color: #ff4b4b;
   width: 3rem;
   height: 3rem;
-  animation: pulse 1.8s infinite;
+  animation: iconPulse 1.8s infinite; /* Renamed animation */
 }
 
 .lose-content h2 {
@@ -170,8 +182,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10010; /* Increased to be above search panels */
   backdrop-filter: blur(5px);
+  animation: panelFadeIn 0.3s ease-out; /* Renamed animation */
 }
 
 .rules-panel {
@@ -180,9 +193,12 @@
   padding: 2rem;
   max-width: 600px;
   width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
   text-align: left;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
   position: relative;
+  animation: panelSlideUp 0.3s ease-out; /* Renamed animation */
 }
 
 .rules-header {
@@ -190,6 +206,11 @@
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
+  position: sticky;
+  top: 0;
+  background: white;
+  padding: 0.5rem 0;
+  z-index: 1;
 }
 
 .info-icon {
@@ -217,6 +238,7 @@
   list-style-type: disc;
   margin-left: 1.5rem;
   line-height: 1.6;
+  margin-bottom: 1rem;
 }
 
 .rules-content li {
@@ -228,15 +250,21 @@
   font-style: italic;
   color: #666;
   margin-top: 1rem;
+  border-left: 3px solid #4285f4;
+  padding-left: 0.75rem;
 }
 
 .rules-footer {
   margin-top: 1.5rem;
   text-align: center;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding: 0.5rem 0;
 }
 
-/* 🔁 Animations */
-@keyframes bounce {
+/* 🔁 Animations - RENAMED to avoid conflicts */
+@keyframes iconBounce {
   0%, 20%, 50%, 80%, 100% {
     transform: translateY(0);
   }
@@ -248,7 +276,7 @@
   }
 }
 
-@keyframes pulse {
+@keyframes iconPulse {
   0%, 100% {
     transform: scale(1);
     opacity: 1;
@@ -259,7 +287,7 @@
   }
 }
 
-@keyframes fadeIn {
+@keyframes panelFadeIn {
   from {
     opacity: 0;
   }
@@ -268,7 +296,7 @@
   }
 }
 
-@keyframes slideUp {
+@keyframes panelSlideUp {
   from {
     transform: translateY(40px);
     opacity: 0;
@@ -277,4 +305,72 @@
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+/* 📱 Responsive Design Improvements */
+@media (max-width: 480px) {
+  .celebration-card,
+  .lose-card {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .rules-panel {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .button-group {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .primary-button,
+  .secondary-button {
+    width: 100%;
+  }
+  
+  .celebration-content h2,
+  .lose-content h2 {
+    font-size: 1.75rem;
+  }
+  
+  .rules-header h2 {
+    font-size: 1.5rem;
+  }
+}
+
+/* 🎯 Focus styles for accessibility */
+.primary-button:focus,
+.secondary-button:focus,
+.close-button:focus {
+  outline: 2px solid #4285f4;
+  outline-offset: 2px;
+}
+
+/* 🔄 Prevent background scrolling when panels are open */
+body.panel-open {
+  overflow: hidden;
+}
+
+/* 🔢 Moves Counter Styles - ADDED since it's used in JSX */
+.moves-counter {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 2px solid #4285f4;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #333;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100; /* Below panels but above main content */
+}
+
+.moves-counter span {
+  color: #4285f4;
+  font-size: 1.1rem;
 }

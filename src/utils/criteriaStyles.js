@@ -1,7 +1,9 @@
-// utils/criteriaStyles.js
+// src/utils/criteriaStyles.js
 
 export const criteriaColors = {
-  // Types
+  /* -------------------------------------------------------------------------- */
+  /* 🧩 TYPES                                                                  */
+  /* -------------------------------------------------------------------------- */
   type_normal: "bg-gray-200 text-gray-900",
   type_fire: "bg-red-300 text-red-900",
   type_water: "bg-blue-300 text-blue-900",
@@ -21,7 +23,9 @@ export const criteriaColors = {
   type_steel: "bg-slate-200 text-slate-900",
   type_fairy: "bg-pink-200 text-pink-900",
 
-  // Regions
+  /* -------------------------------------------------------------------------- */
+  /* 🌍 REGIONS                                                                */
+  /* -------------------------------------------------------------------------- */
   region_kanto: "bg-pink-200 text-pink-900",
   region_johto: "bg-orange-200 text-orange-900",
   region_hoenn: "bg-green-200 text-green-900",
@@ -32,23 +36,58 @@ export const criteriaColors = {
   region_galar: "bg-gray-300 text-gray-900",
   region_paldea: "bg-lime-200 text-lime-900",
 
-  // Specials
+  /* -------------------------------------------------------------------------- */
+  /* 🌟 SPECIALS                                                               */
+  /* -------------------------------------------------------------------------- */
   special_legendary: "bg-indigo-300 text-indigo-900",
   special_mythical: "bg-teal-300 text-teal-900",
   special_starter: "bg-lime-200 text-lime-900",
   special_fossil: "bg-yellow-200 text-yellow-900",
+  special_ultrabeast: "bg-purple-300 text-purple-900",
+  special_paradox: "bg-rose-200 text-rose-900",
+  special_baby: "bg-sky-200 text-sky-900",
 
-  // Default fallback
+  /* -------------------------------------------------------------------------- */
+  /* 🧬 EVOLUTION STAGES (Simple Stage Filter)                                 */
+  /* -------------------------------------------------------------------------- */
+  stage_base: "bg-emerald-200 text-emerald-900",
+  stage_middle: "bg-amber-200 text-amber-900",
+  stage_final: "bg-red-200 text-red-900",
+  stage_single: "bg-gray-200 text-gray-900",
+
+  /* -------------------------------------------------------------------------- */
+  /* 🔁 EVOLUTION DETAILS (Advanced Evolution Filters)                         */
+  /* -------------------------------------------------------------------------- */
+  evolution_start: "bg-green-200 text-green-900",
+  evolution_middle: "bg-yellow-200 text-yellow-900",
+  evolution_final: "bg-red-200 text-red-900",
+  evolution_branched: "bg-purple-200 text-purple-900",
+  evolution_notbranched: "bg-gray-200 text-gray-900",
+
+  evolution_item: "bg-blue-200 text-blue-900",
+  evolution_trade: "bg-pink-200 text-pink-900",
+  evolution_friendship: "bg-rose-200 text-rose-900",
+  evolution_levelup: "bg-orange-200 text-orange-900",
+  evolution_none: "bg-slate-200 text-slate-900",
+
+  /* -------------------------------------------------------------------------- */
+  /* 🧱 DEFAULT FALLBACK                                                      */
+  /* -------------------------------------------------------------------------- */
   default: "bg-gray-200 text-gray-800",
 };
 
 /**
- * Get Tailwind-style classes for a given criterion
+ * ✅ Get Tailwind-style classes for a given criterion
  * @param {{ kind: string, value: string }} criterion
  * @returns {string} class names
  */
 export function getCriteriaStyle({ kind, value }) {
   if (!kind || !value) return criteriaColors.default;
-  const key = `${kind.toLowerCase()}_${value.toLowerCase()}`;
+
+  const key = `${kind.toLowerCase()}_${value
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/-/g, "")}`; // Normalize spaces & dashes
+
   return criteriaColors[key] || criteriaColors.default;
 }

@@ -1,9 +1,10 @@
 // src/App.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import "./styles.css";
 import PuzzleGrid from "./components/PuzzleGrid";
 import GamePanels from "./components/GamePanels";
-import { fetchAllPokemonNames } from "./utils/api";
+import RulesPanel from "./components/RulesPanel";
+import { fetchAllPokemonNamesLazy } from "./utils/api";
 import { cacheNames, getNames } from "./utils/Pokemoncache";
 import { randomCriteriaList, buildGrid } from "./utils/PuzzleHelpers";
 
@@ -15,102 +16,212 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [showWin, setShowWin] = useState(false);
   const [showRules, setShowRules] = useState(false);
-  const [gameOver, setGameOver] = useState(false); // 🆕 Added for lose condition or move exhaustion
+  const [gameOver, setGameOver] = useState(false);
+  const [error, setError] = useState(null);
 
-  /** 🧩 Initialize puzzle on mount */
-  useEffect(() => {
-    async function initPuzzle() {
-      try {
-        const rowCriteria = randomCriteriaList();
-        const colCriteria = randomCriteriaList();
-        setRows(rowCriteria);
-        setCols(colCriteria);
-        setGrid(buildGrid(rowCriteria, colCriteria));
+  /* -------------------------------------------------------------------------- */
+  /* 🧩 Initialize Puzzle Logic                                                 */
+  /* -------------------------------------------------------------------------- */
+  const initPuzzle = useCallback(async (signal) => {
+    setLoading(true);
+    setError(null);
+    setShowWin(false);
+    setGameOver(false);
 
-        let pokemonNames = getNames();
-        if (!pokemonNames.length) {
-          const fetchedNames = await fetchAllPokemonNames();
-          cacheNames(fetchedNames);
-          pokemonNames = fetchedNames;
+    try {
+      // Generate random criteria for the puzzle
+      const rowCriteria = randomCriteriaList(3);
+      const colCriteria = randomCriteriaList(3);
+
+      setRows(rowCriteria);
+      setCols(colCriteria);
+      setGrid(buildGrid(rowCriteria, colCriteria));
+
+      // Save criteria for persistence
+      localStorage.setItem(
+        "pokedoku-lastCriteria",
+        JSON.stringify({ rowCriteria, colCriteria })
+      );
+
+      // Fetch Pokémon names lazily
+      let pokemonNames = getNames();
+
+      if (!pokemonNames.length) {
+        const fetchedNames = await fetchAllPokemonNamesLazy();
+
+        if (signal?.aborted) return; // cancel early if unmounted
+
+        if (!Array.isArray(fetchedNames) || !fetchedNames.length) {
+          throw new Error("Empty Pokémon name list received.");
         }
-        setNamesList(pokemonNames);
-      } catch (err) {
-        console.error("⚠️ Failed to initialize PokéDoku puzzle:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
 
-    initPuzzle();
+        cacheNames(fetchedNames);
+        pokemonNames = fetchedNames;
+      }
+
+      // Clean and normalize names for searching
+      const cleanedNames = pokemonNames
+        .filter((n) => typeof n === "string" && n.trim().length > 0)
+        .map((n) => ({
+          display: n.trim(), // Original name (for sprites)
+          searchKey: n.trim().toLowerCase(), // For searching
+        }));
+
+      setNamesList(cleanedNames);
+      setLoading(false);
+    } catch (err) {
+      if (signal?.aborted) return;
+      console.error("❌ Failed to initialize PokéDoku:", err);
+      setError(err.message || "Failed to load puzzle data.");
+      setNamesList([]);
+      setLoading(false);
+    }
   }, []);
 
-  /** 🎯 Triggered when the grid is successfully completed */
-  const handleGridComplete = () => {
-    setShowWin(true);
+  /* -------------------------------------------------------------------------- */
+  /* ⚙️ Mount Effect                                                           */
+  /* -------------------------------------------------------------------------- */
+  useEffect(() => {
+    const controller = new AbortController();
+    initPuzzle(controller.signal);
+    return () => controller.abort();
+  }, [initPuzzle]);
+
+  /* -------------------------------------------------------------------------- */
+  /* 🎯 Handlers                                                               */
+  /* -------------------------------------------------------------------------- */
+  const handleGridComplete = (isWin) => {
+    setShowWin(isWin);
+    setGameOver(!isWin);
   };
 
-  /** 💀 Triggered when the player loses or runs out of moves */
-  const handleGameOver = () => {
-    setGameOver(true);
-  };
-
-  /** 🔁 Restart the game (generate a new puzzle) */
   const handleRestart = () => {
     setShowWin(false);
-    setShowRules(false);
     setGameOver(false);
-    setLoading(true);
-
-    const rowCriteria = randomCriteriaList();
-    const colCriteria = randomCriteriaList();
-    setRows(rowCriteria);
-    setCols(colCriteria);
-    setGrid(buildGrid(rowCriteria, colCriteria));
-
-    setTimeout(() => setLoading(false), 500);
+    setShowRules(false);
+    initPuzzle();
   };
 
+  const handleQuickRestart = handleRestart;
+
+  /* -------------------------------------------------------------------------- */
+  /* 🎨 Render States                                                          */
+  /* -------------------------------------------------------------------------- */
+  if (loading) {
+    return (
+      <div className="app-container">
+        <header className="app-header">
+          <h1 className="app-title">PokéDoku</h1>
+          <button
+            onClick={() => setShowRules(true)}
+            className="rules-button"
+            aria-label="How to Play"
+          >
+            How to Play
+          </button>
+        </header>
+        <div className="loading-container">
+          <div className="loading-spinner-large"></div>
+          <p className="loading-text">🔄 Loading puzzle...</p>
+          <p className="loading-subtext">Preparing your Pokémon challenge</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="app-container">
+        <header className="app-header">
+          <h1 className="app-title">PokéDoku</h1>
+          <button
+            onClick={() => setShowRules(true)}
+            className="rules-button"
+            aria-label="How to Play"
+          >
+            How to Play
+          </button>
+        </header>
+        <div className="error-container">
+          <div className="error-icon">⚠️</div>
+          <p className="error-text">Failed to load puzzle</p>
+          <p className="error-details">{error}</p>
+          <div className="error-actions">
+            <button onClick={() => initPuzzle()} className="retry-button">
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* 🧩 Main Game Layout                                                       */
+  /* -------------------------------------------------------------------------- */
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col items-center py-6">
-      {/* 🔝 Header */}
-      <header className="flex justify-between items-center w-full max-w-3xl px-4 mb-4">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-          PokéDoku
-        </h1>
-        <button
-          onClick={() => setShowRules(true)}
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm underline"
-        >
-          How to Play
-        </button>
+    <div className="app-container">
+      <header className="app-header">
+        <div className="header-content">
+          <h1 className="app-title">
+            <span className="title-icon">⚬</span>
+            PokéDoku
+          </h1>
+          <div className="header-actions">
+            <button
+              onClick={handleQuickRestart}
+              className="restart-button"
+              aria-label="Restart Game"
+            >
+              🔄 Restart
+            </button>
+            <button
+              onClick={() => setShowRules(true)}
+              className="rules-button"
+              aria-label="How to Play"
+            >
+              ❓ How to Play
+            </button>
+          </div>
+        </div>
       </header>
 
-      {/* 🧩 Main Game Area */}
-      {loading ? (
-        <p className="text-gray-600 dark:text-gray-300 mt-20">
-          Loading puzzle...
-        </p>
-      ) : (
+      <main className="game-main">
         <PuzzleGrid
           namesList={namesList}
           initialGrid={grid}
           rows={rows}
           cols={cols}
           onGridComplete={handleGridComplete}
-          onGameOver={handleGameOver} // 🆕 Added callback
         />
-      )}
+      </main>
 
-      {/* 🎉 Win / Lose + 📜 Rules Panel */}
       <GamePanels
         showWin={showWin}
-        showRules={showRules}
         showLose={gameOver}
         onCloseWin={() => setShowWin(false)}
-        onCloseRules={() => setShowRules(false)}
         onCloseLose={() => setGameOver(false)}
         onRestart={handleRestart}
       />
+
+      {showRules && <RulesPanel onClose={() => setShowRules(false)} />}
+
+      <footer className="game-footer">
+        <button
+          onClick={handleQuickRestart}
+          className="footer-button"
+          aria-label="Quick Restart"
+        >
+          🔄 New Puzzle
+        </button>
+        <button
+          onClick={() => setShowRules(true)}
+          className="footer-button"
+          aria-label="View Rules"
+        >
+          📖 Rules
+        </button>
+      </footer>
     </div>
   );
 }

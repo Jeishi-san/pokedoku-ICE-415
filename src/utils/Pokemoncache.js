@@ -1,95 +1,136 @@
-// src/utils/pokemonCache.js
-
+// ✅ src/utils/PokemonCache.js — Optimized Hybrid Version
 /**
- * ✅ In-memory + persistent cache for Pokémon data.
- * Uses localStorage for persistence between reloads.
+ * Pokémon Data Cache for PokéDoku
+ * - Keeps names, details, species, and evolutions in memory + localStorage
+ * - Auto-loads & persists
+ * - Lightweight, reliable, and fast
  */
+
+const hasLocalStorage = typeof window !== "undefined" && typeof localStorage !== "undefined";
+
 const cache = {
-  names: null,           // Array<{ name, image, url }>
-  details: {},           // Pokémon details keyed by lowercase name
-  species: {},           // Species details keyed by species URL
+  names: null,
+  details: {},     // { [name]: { sprites, stats, etc. } }
+  species: {},     // { [name]: { region, types, generation, ... } }
+  evolutions: {}   // { [name]: evolutionData }
 };
 
-/** Normalize Pokémon name for consistent key storage */
-function normalizeName(name) {
-  return name?.toLowerCase()?.trim() || "";
-}
+/* -------------------------------------------------------------------------- */
+/* 🧩 Helpers                                                                 */
+/* -------------------------------------------------------------------------- */
+const normalize = (v) => (typeof v === "string" ? v.trim().toLowerCase() : "");
+const safeSet = (key, obj, value) => (key && value && (obj[key] = value));
+const safeGet = (key, obj) => (key ? obj[key] || null : null);
 
-/** Save cache to localStorage (for persistence) */
-function saveCache() {
+function persist() {
+  if (!hasLocalStorage) return;
   try {
     localStorage.setItem("pokemonCache", JSON.stringify(cache));
   } catch (err) {
-    console.warn("⚠️ Failed to save Pokémon cache:", err);
+    console.warn("⚠️ Failed to save cache:", err);
   }
 }
 
-/** Load cache from localStorage on startup */
-(function loadCache() {
+function load() {
+  if (!hasLocalStorage) return;
   try {
-    const stored = localStorage.getItem("pokemonCache");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      Object.assign(cache, parsed);
-      console.log("✅ Pokémon cache loaded from localStorage");
-    }
+    const data = localStorage.getItem("pokemonCache");
+    if (data) Object.assign(cache, JSON.parse(data));
   } catch (err) {
-    console.warn("⚠️ Failed to load Pokémon cache:", err);
+    console.warn("⚠️ Failed to load cache:", err);
   }
-})();
-
-/* ---------------------- 🗃️ NAME CACHE ---------------------- */
-
-/** Cache the list of all Pokémon names */
-export function cacheNames(list) {
-  if (!Array.isArray(list)) return;
-  cache.names = list;
-  saveCache();
 }
+load();
 
-/** Get cached Pokémon names */
-export function getNames() {
-  return cache.names || [];
-}
+/* -------------------------------------------------------------------------- */
+/* 🔤 Name Cache                                                              */
+/* -------------------------------------------------------------------------- */
+export const cacheNames = (list) => {
+  if (Array.isArray(list) && list.length) {
+    cache.names = list;
+    persist();
+  }
+};
+export const getNames = () => cache.names || [];
 
-/* -------------------- 🔍 DETAILS CACHE -------------------- */
+/* -------------------------------------------------------------------------- */
+/* 🧱 Pokémon Details Cache                                                   */
+/* -------------------------------------------------------------------------- */
+export const cacheDetails = (name, data) => {
+  const key = normalize(name);
+  if (typeof data === "object") safeSet(key, cache.details, data);
+  persist();
+};
+export const getDetails = (name) => safeGet(normalize(name), cache.details);
 
-/** Cache detailed Pokémon info */
-export function cacheDetails(name, data) {
-  const key = normalizeName(name);
-  if (!key || !data) return;
-  cache.details[key] = data;
-  saveCache();
-}
+/* -------------------------------------------------------------------------- */
+/* 🧬 Species Cache (Core for PokéDoku)                                       */
+/* -------------------------------------------------------------------------- */
+export const cacheSpeciesByName = (name, data) => {
+  const key = normalize(name);
+  if (!data || typeof data !== "object") return;
 
-/** Retrieve cached Pokémon details by name */
-export function getDetails(name) {
-  const key = normalizeName(name);
-  return cache.details[key] || null;
-}
+  safeSet(key, cache.species, {
+    name: data.name || key,
+    region: data.region || "Unknown",
+    generation: data.generation || "Unknown",
+    evolution: data.evolution || "Unknown",
+    types: Array.isArray(data.types) ? data.types : [],
+    statuses: Array.isArray(data.statuses) ? data.statuses : ["Normal Pokémon"]
+  });
 
-/* -------------------- 🧬 SPECIES CACHE -------------------- */
+  persist();
+};
+export const getSpeciesByName = (name) => safeGet(normalize(name), cache.species);
 
-/** Cache species data fetched from REST URL */
-export function cacheSpecies(url, data) {
-  if (!url || !data) return;
-  cache.species[url] = data;
-  saveCache();
-}
+// Legacy URL-based fallback
+export const cacheSpecies = (url, data) => typeof url === "string" && data && (cache.species[url] = data, persist());
+export const getSpecies = (url) => safeGet(url, cache.species);
 
-/** Retrieve cached species data by URL */
-export function getSpecies(url) {
-  if (!url) return null;
-  return cache.species[url] || null;
-}
+/* -------------------------------------------------------------------------- */
+/* 🔄 Combined Cache Helpers                                                  */
+/* -------------------------------------------------------------------------- */
+export const cachePokemonData = (name, speciesData) => {
+  cacheSpeciesByName(name, speciesData);
+};
+export const getPokemonData = (name) => {
+  const key = normalize(name);
+  return {
+    details: getDetails(key),
+    species: getSpeciesByName(key),
+    hasData: !!(cache.details[key] || cache.species[key])
+  };
+};
 
-/* ---------------------- ⚙️ UTILITIES ---------------------- */
-
-/** Clear all cached Pokémon data */
-export function clearCache() {
-  cache.names = null;
-  cache.details = {};
-  cache.species = {};
-  localStorage.removeItem("pokemonCache");
+/* -------------------------------------------------------------------------- */
+/* 🧹 Maintenance + Debug                                                     */
+/* -------------------------------------------------------------------------- */
+export const clearCache = () => {
+  Object.assign(cache, { names: null, details: {}, species: {}, evolutions: {} });
+  if (hasLocalStorage) localStorage.removeItem("pokemonCache");
   console.log("🧹 Pokémon cache cleared");
+};
+
+export const cacheStats = () => ({
+  names: cache.names?.length || 0,
+  details: Object.keys(cache.details).length,
+  species: Object.keys(cache.species).length,
+  evolutions: Object.keys(cache.evolutions).length
+});
+
+export const debugCache = () => console.table(cacheStats());
+
+if (typeof window !== "undefined") {
+  window.pokemonCacheDebug = {
+    cacheStats,
+    debugCache,
+    clearCache,
+    getStats: () => ({
+      names: cache.names?.length || 0,
+      species: Object.keys(cache.species).length,
+      sampleSpecies: Object.keys(cache.species).slice(0, 3)
+    })
+  };
 }
+
+console.log("✅ PokémonCache initialized:", cacheStats());

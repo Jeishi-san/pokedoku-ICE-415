@@ -1,17 +1,16 @@
-// src/components/PuzzleGrid.jsx
-import React, { useState, useEffect } from "react";
+// ✅ src/components/PuzzleGrid.jsx (Fixed import issues)
+import React, { useState, useCallback, useMemo } from "react";
 import Cell from "./Cell";
 import FloatingSearchPanel from "./FloatingSearch";
 import "./PuzzleGrid.css";
 
-import { fetchPokemonDetails, fetchSpeciesByName } from "../utils/api";
-import { getDetails, cacheDetails } from "../utils/Pokemoncache";
+// FIXED: Import correct functions from api.js
+import { fetchSpeciesByName, normalizeName } from "../utils/api";
+import { getSpeciesByName, cacheSpeciesByName } from "../utils/Pokemoncache";
 import { getCriteriaStyle } from "../utils/criteriaStyles";
 import { matchesCriterion } from "../utils/criteria";
-import { getSpecialCategory } from "../utils/specialPokemon.js";
 
 export default function PuzzleGrid({ initialGrid = [], onGridComplete }) {
-  // ✅ Safe fallback grid
   const safeGrid =
     Array.isArray(initialGrid) && initialGrid.length
       ? initialGrid
@@ -19,190 +18,266 @@ export default function PuzzleGrid({ initialGrid = [], onGridComplete }) {
           .fill(null)
           .map(() => Array(3).fill({ row: {}, col: {} }));
 
-  const rowCount = safeGrid.length;
-  const colCount = safeGrid[0]?.length || 3;
-
-  const [entries, setEntries] = useState(
-    Array(rowCount)
+  const [entries, setEntries] = useState(() =>
+    Array(safeGrid.length)
       .fill(null)
-      .map(() => Array(colCount).fill(null))
+      .map(() => Array(safeGrid[0]?.length || 3).fill(null))
   );
-
-  const [statuses, setStatuses] = useState(
-    Array(rowCount)
+  const [statuses, setStatuses] = useState(() =>
+    Array(safeGrid.length)
       .fill(null)
-      .map(() => Array(colCount).fill("empty"))
+      .map(() => Array(safeGrid[0]?.length || 3).fill("empty"))
   );
-
   const [activeCell, setActiveCell] = useState(null);
   const [usedPokemon, setUsedPokemon] = useState(new Set());
-  const [movesLeft, setMovesLeft] = useState(9); // 🧩 track total allowed moves
+  const [movesLeft, setMovesLeft] = useState(9);
+  const [loadingCells, setLoadingCells] = useState(new Set());
 
-  /** 🧩 Normalize Pokémon names for sprite URLs */
-  const normalizeShowdownName = (name) =>
-    name
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/♀/g, "f")
-      .replace(/♂/g, "m")
-      .replace(/[^a-z0-9-]/g, "")
-      .replace(/-mega-(x|y)/, "mega-$1")
-      .replace(/-mega$/, "mega")
-      .replace(/-gmax$/, "gmax")
-      .replace(/-alola$/, "alola")
-      .replace(/-galar$/, "galar")
-      .replace(/-hisui$/, "hisui")
-      .replace(/-paldea$/, "paldea");
+  /* -------------------------------------------------------------------------- */
+  /* 🧠 FIXED: Use imported normalizeName function                              */
+  /* -------------------------------------------------------------------------- */
+  const getPokemonSprite = useCallback((name) => {
+    if (!name) return "";
 
-  /** 🖱️ Handle clicking a cell */
-  const handleCellClick = (r, c) => {
-    if (statuses[r][c] !== "empty") return;
-    setActiveCell({ r, c });
-  };
+    let key = normalizeName(name);
 
-  /** 🎯 Handle Pokémon selection from FloatingSearch */
-  async function handleSelectPokemon(name) {
-    if (!activeCell) return;
-    const { r, c } = activeCell;
+    // Regional + form suffix normalization
+    const corrections = [
+      ["-alola", "-alolan"],
+      ["-galar", "-galarian"],
+      ["-hisui", "-hisuian"],
+      ["-paldea", "-paldean"],
+      ["-gmax", "-gigantamax"],
+    ];
+    corrections.forEach(([from, to]) => {
+      if (key.endsWith(from)) key = key.replace(from, to);
+    });
 
-    const lowerName = name.toLowerCase();
-    if (usedPokemon.has(lowerName)) {
-      alert(`${name} has already been used!`);
-      return;
-    }
+    // Special cases for forms (PokémonDB-specific)
+    const spriteMap = {
+      "tauros-paldean": "tauros-paldean-combat",
+      "tauros-paldean-aqua": "tauros-paldean-aqua",
+      "tauros-paldean-blaze": "tauros-paldean-blaze",
+      "ogerpon-cornerstone": "ogerpon-cornerstone",
+      "ogerpon-hearthflame": "ogerpon-hearthflame",
+      "ogerpon-wellspring": "ogerpon-wellspring",
+      "minior-meteor": "minior-meteor",
+      "minior-blue": "minior-blue-core",
+      "minior-green": "minior-green-core",
+      "minior-indigo": "minior-indigo-core",
+      "minior-orange": "minior-orange-core",
+      "minior-red": "minior-red-core",
+      "minior-violet": "minior-violet-core",
+      "minior-yellow": "minior-yellow-core",
+      "terapagos-stellar": "terapagos-stellar",
+      "terapagos-terastal": "terapagos-terastal",
+      "toxtricity-gmax": "toxtricity-gigantamax",
+      "toxtricity-amped-gmax": "toxtricity-gigantamax",
+      "toxtricity-low-key-gmax": "toxtricity-gigantamax",
+      "calyrex-ice": "calyrex-ice-rider",
+      "calyrex-shadow": "calyrex-shadow-rider",
+    };
+    if (spriteMap[key]) key = spriteMap[key];
 
-    try {
-      // --- Fetch Pokémon details (cached if available)
-      let details = getDetails(lowerName);
-      if (!details) {
-        const poke = await fetchPokemonDetails(lowerName);
-        const species = await fetchSpeciesByName(lowerName);
-        details = { poke, species };
-        cacheDetails(lowerName, details);
+    return `https://img.pokemondb.net/sprites/home/normal/${key}.png`;
+  }, []);
+
+  /* -------------------------------------------------------------------------- */
+  /* 🧩 Cell click handler                                                      */
+  /* -------------------------------------------------------------------------- */
+  const handleCellClick = useCallback(
+    (r, c) => {
+      if (statuses[r][c] === "empty" && !loadingCells.has(`${r}-${c}`)) {
+        setActiveCell({ r, c });
+      }
+    },
+    [statuses, loadingCells]
+  );
+
+  /* -------------------------------------------------------------------------- */
+  /* 🧩 Pokémon selection handler (UPDATED)                                    */
+  /* -------------------------------------------------------------------------- */
+  const handleSelectPokemon = useCallback(
+    async (name) => {
+      if (!activeCell) return;
+      const { r, c } = activeCell;
+      const cellKey = `${r}-${c}`;
+      const lowerName = name.toLowerCase();
+
+      if (usedPokemon.has(lowerName)) {
+        alert(`${name} has already been used!`);
+        return;
       }
 
-      // --- Build image URL fallback
-      const showdownName = normalizeShowdownName(name);
-      const image =
-        details?.poke?.sprites?.other?.["official-artwork"]?.front_default ||
-        details?.poke?.sprites?.front_default ||
-        `https://img.pokemondb.net/sprites/home/normal/${showdownName}.png`;
+      // Set loading state
+      setLoadingCells(prev => new Set([...prev, cellKey]));
 
-      // --- Unified Pokémon entry
-      const entry = {
-        name,
-        image,
-        types: details?.poke?.types?.map((t) => t.type.name.toLowerCase()) || [],
-        region: details?.species?.region || "",
-        is_legendary: details?.species?.is_legendary || false,
-        is_mythical: details?.species?.is_mythical || false,
-        category:
-          details?.species?.specialStatuses?.join(", ") ||
-          getSpecialCategory(name) ||
-          "Normal",
-      };
+      try {
+        let speciesData = getSpeciesByName(lowerName);
+        if (!speciesData) {
+          // FIXED: Use fetchSpeciesByName from your api.js
+          speciesData = await fetchSpeciesByName(lowerName);
+          if (speciesData) cacheSpeciesByName(lowerName, speciesData);
+        }
 
-      // --- Update grid
-      const newEntries = entries.map((row) => row.slice());
-      newEntries[r][c] = entry;
-      setEntries(newEntries);
+        const entry = {
+          name,
+          image: getPokemonSprite(name),
+          types: speciesData?.types || [],
+          region: speciesData?.region || "Unknown",
+          evolution: speciesData?.evolution || "Unknown",
+          statuses: speciesData?.statuses || ["Normal Pokémon"],
+          generation: speciesData?.generation || "Unknown",
+        };
 
-      // --- Validate criteria
-      const rowCrit = safeGrid[r][c].row;
-      const colCrit = safeGrid[r][c].col;
-      const isValid =
-        matchesCriterion(entry, rowCrit) && matchesCriterion(entry, colCrit);
+        // ✅ Update state
+        setEntries((prev) => {
+          const newEntries = prev.map((row) => [...row]);
+          newEntries[r][c] = entry;
+          return newEntries;
+        });
 
-      const newStatuses = statuses.map((row) => row.slice());
-      newStatuses[r][c] = isValid ? "valid" : "invalid";
-      setStatuses(newStatuses);
+        const rowCrit = safeGrid[r][c].row;
+        const colCrit = safeGrid[r][c].col;
+        const isValid =
+          matchesCriterion(entry, rowCrit) && matchesCriterion(entry, colCrit);
 
-      // --- Mark Pokémon as used
-      const updatedUsed = new Set(usedPokemon);
-      updatedUsed.add(lowerName);
-      setUsedPokemon(updatedUsed);
+        setStatuses((prev) => {
+          const newStatuses = prev.map((row) => [...row]);
+          newStatuses[r][c] = isValid ? "valid" : "invalid";
+          return newStatuses;
+        });
 
-      // --- Reduce moves
-      const updatedMoves = movesLeft - 1;
-      setMovesLeft(updatedMoves);
+        setUsedPokemon((prev) => new Set([...prev, lowerName]));
+        setMovesLeft((prev) => prev - 1);
 
-      // --- Check win/lose conditions
-      if (isGridComplete(newStatuses)) {
-        onGridComplete(true); // 🎉 trigger win
-      } else if (updatedMoves <= 0) {
-        onGridComplete(false); // ❌ trigger lose
+        // ✅ Check completion
+        setTimeout(() => {
+          const allValid = statuses.flat().every((s) => s === "valid");
+          const newStatusesFlat = [...statuses];
+          newStatusesFlat[r][c] = isValid ? "valid" : "invalid";
+          const newAllValid = newStatusesFlat.flat().every((s) => s === "valid");
+          
+          if (newAllValid) onGridComplete?.(true);
+          else if (movesLeft - 1 <= 0) onGridComplete?.(false);
+        }, 100);
+
+      } catch (err) {
+        console.error("❌ Error loading Pokémon:", err);
+        setStatuses((prev) => {
+          const newStatuses = prev.map((row) => [...row]);
+          newStatuses[r][c] = "error";
+          return newStatuses;
+        });
+        alert("Failed to load Pokémon. Please try again.");
+      } finally {
+        setLoadingCells(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(cellKey);
+          return newSet;
+        });
+        setActiveCell(null);
       }
+    },
+    [activeCell, usedPokemon, statuses, movesLeft, safeGrid, onGridComplete, getPokemonSprite]
+  );
 
-    } catch (err) {
-      console.error(`❌ Error selecting Pokémon ${name}:`, err);
-      alert("Failed to load Pokémon details. Please try again.");
-    } finally {
-      setActiveCell(null);
-    }
-  }
+  /* -------------------------------------------------------------------------- */
+  /* 🧮 Derived state                                                           */
+  /* -------------------------------------------------------------------------- */
+  const rowCriteria = useMemo(
+    () => safeGrid.map((row) => row?.[0]?.row || {}),
+    [safeGrid]
+  );
+  const colCriteria = useMemo(
+    () => safeGrid[0]?.map((col) => col?.col || {}) || [],
+    [safeGrid]
+  );
 
-  /** 🧮 Helper: Check if all cells are valid */
-  const isGridComplete = (statusGrid) =>
-    statusGrid.flat().every((s) => s === "valid");
+  const activeCellCriteria = useMemo(() => {
+    if (!activeCell) return null;
+    return {
+      row: rowCriteria[activeCell.r],
+      col: colCriteria[activeCell.c],
+    };
+  }, [activeCell, rowCriteria, colCriteria]);
 
-  /** Extract grid criteria */
-  const rowCriteria = safeGrid.map((row) => row?.[0]?.row || {});
-  const colCriteria = safeGrid[0]?.map((col) => col?.col || {}) || [];
+  /* -------------------------------------------------------------------------- */
+  /* 🧩 Close search handler                                                    */
+  /* -------------------------------------------------------------------------- */
+  const handleCloseSearch = useCallback(() => setActiveCell(null), []);
 
+  /* -------------------------------------------------------------------------- */
+  /* 🧩 Get cell status with loading                                            */
+  /* -------------------------------------------------------------------------- */
+  const getCellStatus = useCallback((r, c) => {
+    const cellKey = `${r}-${c}`;
+    if (loadingCells.has(cellKey)) return "loading";
+    return statuses[r]?.[c] || "empty";
+  }, [statuses, loadingCells]);
+
+  /* -------------------------------------------------------------------------- */
+  /* 🧩 Render                                                                 */
+  /* -------------------------------------------------------------------------- */
   return (
-    <div className="puzzle-container relative">
-      {/* 🔲 Grid Layout */}
-      <div className="grid-layout">
+    <div className="puzzle-container">
+      <div className="grid-layout" style={{
+        gridTemplateColumns: `80px repeat(${colCriteria.length}, 80px)`,
+        gridTemplateRows: `80px repeat(${rowCriteria.length}, 80px)`
+      }}>
+        {/* Top-left corner */}
         <div className="corner" />
+        
+        {/* Column headers */}
         {colCriteria.map((crit, i) => (
           <div
             key={`col-${i}`}
             className={`criteria-header ${getCriteriaStyle(crit)}`}
-            style={{ gridRow: 1, gridColumn: i + 2 }}
+            style={{ gridColumn: i + 2, gridRow: 1 }}
           >
             {crit?.value || ""}
           </div>
         ))}
-
+        
+        {/* Row headers and cells */}
         {rowCriteria.map((rowCrit, rIdx) => (
           <React.Fragment key={`row-${rIdx}`}>
-            <div
+            {/* Row header */}
+            <div 
               className={`criteria-header ${getCriteriaStyle(rowCrit)}`}
-              style={{ gridRow: rIdx + 2, gridColumn: 1 }}
+              style={{ gridColumn: 1, gridRow: rIdx + 2 }}
             >
               {rowCrit?.value || ""}
             </div>
-
+            
+            {/* Cells in this row */}
             {colCriteria.map((_, cIdx) => (
               <Cell
                 key={`cell-${rIdx}-${cIdx}`}
-                rIdx={rIdx}
-                cIdx={cIdx}
-                value={entries[rIdx]?.[cIdx] || null}
-                onClick={handleCellClick}
-                status={statuses[rIdx]?.[cIdx] || "empty"}
-                style={{ gridRow: rIdx + 2, gridColumn: cIdx + 2 }}
+                value={entries[rIdx]?.[cIdx]}
+                onClick={() => handleCellClick(rIdx, cIdx)}
+                status={getCellStatus(rIdx, cIdx)}
+                style={{ 
+                  gridColumn: cIdx + 2, 
+                  gridRow: rIdx + 2 
+                }}
               />
             ))}
           </React.Fragment>
         ))}
       </div>
 
-      {/* 🧩 Floating Search */}
       <FloatingSearchPanel
         isOpen={!!activeCell}
-        onClose={() => setActiveCell(null)}
+        onClose={handleCloseSearch}
         onSelect={handleSelectPokemon}
-        activeCellCriteria={
-          activeCell
-            ? {
-                row: rowCriteria[activeCell.r] || {},
-                col: colCriteria[activeCell.c] || {},
-              }
-            : null
-        }
+        activeCellCriteria={activeCellCriteria}
       />
+
+      <div className="game-info">
+        <div>🎮 Moves Left: {movesLeft}</div>
+        <div>📊 Used Pokémon: {usedPokemon.size}</div>
+      </div>
     </div>
   );
 }

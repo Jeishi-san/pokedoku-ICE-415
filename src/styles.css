@@ -1,237 +1,645 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* src/styles.css */
+
+/* 🎨 Theme Variables */
 :root {
   --accent: #ef5350;
-  --card: #fff;
+  --accent-hover: #e53935;
+  --card: #ffffff;
   --muted: #6b7280;
-  --glass: rgba(255, 255, 255, 0.85);
+  --glass: rgba(255, 255, 255, 0.95);
+  --shadow: rgba(0, 0, 0, 0.1);
+  --transition: 0.2s ease-in-out;
+  --border-radius: 12px;
 }
 
+/* 🌄 Background Styling */
 body {
   margin: 0;
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  background: url("./images/images.gif") center center / cover no-repeat fixed,
-              radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.04), transparent 10%),
-              radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.02), transparent 10%),
-              linear-gradient(120deg, #ffefba 0%, #ffffff 40%, #fceabb 100%);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background:
+    url("./images/images.gif") center center / cover no-repeat fixed,
+    radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.04), transparent 10%),
+    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.02), transparent 10%),
+    linear-gradient(120deg, #ffefba 0%, #ffffff 40%, #fceabb 100%);
   min-height: 100vh;
   color: #111827;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 24px;
+  padding: 20px;
+  overflow-x: hidden;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background-image:
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px),
-    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.02) 0 2px, transparent 2px);
-  opacity: 0.18;
-  z-index: -1;
-}
-
-.app {
+/* 🧩 App Layout */
+.app-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
+  max-width: 600px;
+  min-height: 90vh;
+  gap: 20px;
 }
 
-.title {
+/* Header Styles */
+.app-header {
+  width: 100%;
+  padding: 0 20px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.app-title {
   font-size: 2rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--accent);
-  margin-bottom: 16px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Puzzle Grid */
+.title-icon {
+  font-size: 1.8rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Button Styles */
+.rules-button, .restart-button, .retry-button, .footer-button {
+  background: white;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: 0 2px 8px var(--shadow);
+  font-size: 0.9rem;
+}
+
+.rules-button:hover, .restart-button:hover, .retry-button:hover, .footer-button:hover {
+  background: var(--accent);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* 🧠 Puzzle Grid - Pokedoku Style */
 .puzzle-container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0;
 }
 
 .grid-layout {
   display: grid;
-  grid-template-columns: repeat(4, 120px); /* 1 col header + 3 cells */
-  grid-template-rows: repeat(4, 120px);    /* 1 row header + 3 cells */
+  grid-template-columns: 120px repeat(3, 140px);
+  grid-template-rows: 120px repeat(3, 140px);
   gap: 8px;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
-/* Empty corner */
+/* Corner Cell */
 .corner {
   grid-row: 1 / 2;
   grid-column: 1 / 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
 }
 
-/* Criteria headers */
+.corner-icon {
+  font-size: 2rem;
+  opacity: 0.8;
+  color: var(--accent);
+}
+
+/* Header Cells - Pokedoku Style */
 .criteria-header {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  border-radius: 10px;
-  color: #fff;
-  padding: 8px;
+  border-radius: 8px;
+  color: white;
+  padding: 12px 8px;
   text-align: center;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  min-height: 60px;
+  border: 2px solid transparent;
 }
 
-/* Cell */
+.criteria-header:hover {
+  transform: none;
+}
+
+/* 🧱 Game Cells - Pokedoku Style */
 .cell {
-  background: var(--glass);
-  border-radius: 14px;
+  background: white;
+  border-radius: 8px;
   padding: 12px;
-  min-height: 120px;
+  min-height: 140px;
+  min-width: 140px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-  transition: transform 0.15s ease, border 0.15s ease;
+  box-shadow: 0 2px 8px var(--shadow);
+  transition: all var(--transition);
   cursor: pointer;
+  border: 2px solid #e5e7eb;
+  position: relative;
+  z-index: 1;
 }
-.cell:hover {
-  transform: translateY(-4px);
-}
-.cell.valid { outline: 3px solid #22c55e; }
-.cell.invalid { outline: 3px solid #ef4444; }
 
-/* Pokémon entries */
+.cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow);
+  border-color: var(--accent);
+}
+
+.cell:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(239, 83, 80, 0.2);
+}
+
+.cell.valid {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.cell.invalid {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.cell.filled {
+  background: rgba(239, 83, 80, 0.05);
+}
+
+/* 🖼️ Pokémon Entries */
 .entry {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  gap: 6px;
 }
+
 .entry img {
   width: 72px;
   height: 72px;
   object-fit: contain;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
 }
+
 .entry .name {
-  margin-top: 6px;
+  margin-top: 2px;
   font-weight: 600;
   text-transform: capitalize;
-  font-size: 14px;
+  font-size: 13px;
+  color: #1f2937;
+  background: rgba(255,255,255,0.9);
+  padding: 3px 8px;
+  border-radius: 12px;
 }
 
-/* Type colors */
-.type-water    { background: #3b82f6; }
-.type-grass    { background: #22c55e; }
-.type-fire     { background: #ef4444; }
-.type-electric { background: #facc15; color: #111; }
-.type-psychic  { background: #a855f7; }
-.type-ice      { background: #38bdf8; }
-.type-dark     { background: #374151; }
-.type-fairy    { background: #f9a8d4; }
+/* ⚡ Type Colors - Pokedoku Style */
+.type-water    { background: #60a5fa; }
+.type-grass    { background: #4ade80; }
+.type-fire     { background: #f87171; }
+.type-electric { background: #fbbf24; color: #111; }
+.type-psychic  { background: #c084fc; }
+.type-ice      { background: #7dd3fc; }
+.type-dark     { background: #4b5563; color: #fff; }
+.type-fairy    { background: #f0abfc; }
+.type-fighting { background: #dc2626; color: #fff; }
+.type-flying   { background: #93c5fd; }
+.type-poison   { background: #a855f7; color: #fff; }
+.type-ground   { background: #d97706; color: #fff; }
+.type-rock     { background: #a16207; color: #fff; }
+.type-bug      { background: #84cc16; }
+.type-ghost    { background: #7e22ce; color: #fff; }
+.type-steel    { background: #6b7280; color: #fff; }
+.type-dragon   { background: #6366f1; color: #fff; }
 
-/* Region colors */
-.region-kanto  { background: #f472b6; }
-.region-johto  { background: #fb923c; }
-.region-hoenn  { background: #4ade80; }
-.region-sinnoh { background: #38bdf8; }
+/* 🌍 Region Colors */
+.region-kanto  { background: #ec4899; }
+.region-johto  { background: #f97316; }
+.region-hoenn  { background: #22c55e; }
+.region-sinnoh { background: #3b82f6; }
 .region-unova  { background: #06b6d4; }
-.region-alola  { background: #f97316; }
-.region-galar  { background: #fbbf24; }
-.region-paldea { background: #a3e635; }
+.region-alola  { background: #f59e0b; }
+.region-galar  { background: #eab308; color: #111; }
+.region-hisui  { background: #60a5fa; }
+.region-paldea { background: #a3e635; color: #111; }
 
-/* Specials */
-.special-legendary { background: #6366f1; }
-.special-mythical  { background: #14b8a6; }
+/* ⭐ Specials */
+.special-legendary { background: #6366f1; color: #fff; }
+.special-mythical  { background: #14b8a6; color: #fff; }
 .special-starter   { background: #84cc16; }
-.special-fossil    { background: #f97316; }
+.special-fossil    { background: #f97316; color: #fff; }
+.special-ultrabeast { background: #8b5cf6; color: #fff; }
+.special-baby      { background: #fda4af; }
 
-/* Autocomplete */
+/* Game Footer */
+.game-footer {
+  display: flex;
+  gap: 10px;
+  padding: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footer-button {
+  font-size: 0.85rem;
+  padding: 6px 12px;
+}
+
+/* 🔍 Autocomplete - centralized and consistent */
+.autocomplete-wrapper {
+  width: 100%;
+  position: relative;
+  z-index: 10002; /* high so input sits above most page elements inside modal */
+}
+
 .autocomplete {
   position: relative;
-  max-width: 420px;
-}
-.autocomplete input {
   width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(0,0,0,0.1);
-  font-size: 14px;
 }
+
+/* use the single class your component expects: .autocomplete-input */
+.autocomplete-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 16px;
+  background: #ffffff;     /* ensure white background */
+  color: #111;             /* ensure visible typed text */
+  outline: none;
+  transition: all var(--transition);
+  box-sizing: border-box;
+  display: block;
+  position: relative;
+  z-index: 10003; /* above suggestions but still inside panel */
+}
+
+.autocomplete-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(239, 83, 80, 0.2);
+}
+
+/* Suggestions dropdown (positioned below the input) */
 .suggestions {
   position: absolute;
+  top: calc(100% + 6px); /* sits right below input */
   left: 0;
   right: 0;
-  top: 44px;
   background: #fff;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
   list-style: none;
-  margin: 6px 0 0;
+  margin: 0;
   padding: 6px;
-  z-index: 20;
+  z-index: 10005; /* above panel and input */
+  max-height: 280px;
+  overflow-y: auto;
 }
+
 .suggestions li {
-  padding: 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  padding: 10px 12px;
   cursor: pointer;
+  transition: background var(--transition);
+  border-radius: 6px;
+  margin: 2px 0;
 }
-.suggestions li:hover { background: #f3f4f6; }
 
-/* Floating Search Panel */
+.suggestions li:hover {
+  background: #f8fafc;
+}
+
+.suggestion-active {
+  background: #f0f8ff !important;
+  border-left: 3px solid var(--accent);
+}
+
+.suggestions img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  margin-right: 12px;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
+.suggestion-name {
+  flex: 1;
+  text-transform: capitalize;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+/* 🔎 Floating Search Panel - unified */
 .floating-overlay {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  inset: 0;
   background: rgba(0,0,0,0.5);
-  z-index: 1000;
+  z-index: 10000; /* ensure modal overlays app UI */
   display: flex;
   justify-content: center;
   align-items: center;
   animation: fadeIn 0.2s ease-in-out;
 }
+
 .floating-panel {
-  background: #ffffff;
-  border-radius: 12px;
-  width: 350px;
-  max-width: 90%;
-  padding: 16px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  background: white;
+  border-radius: 16px;
+  width: 380px;
+  max-width: 90vw;
+  max-height: 90vh;
+  padding: 20px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   animation: slideDown 0.2s ease-out;
+  overflow: auto; /* allow panel to scroll if content too tall */
+  z-index: 10001; /* sits above overlay but below suggestions */
 }
+
+/* Panel header styles */
 .floating-panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
+
 .floating-panel-header h2 {
-  font-size: 1.25rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0;
+  color: #111;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: #555;
+  transition: color var(--transition);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  color: #000;
+}
+
+/* Status indicators for floating panel */
+.search-status {
+  min-height: 20px;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.status-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.status-error {
+  color: #d32f2f;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-empty {
+  color: #666;
+  font-style: italic;
+}
+
+.status-hint {
+  color: #666;
+  font-style: italic;
+}
+
+/* Quick tips for floating panel */
+.search-tips {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.tip-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #666;
+}
+
+kbd {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-family: monospace;
+  line-height: 1;
+}
+
+/* 🌀 Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 📱 Responsive Design */
+@media (max-width: 640px) {
+  body {
+    padding: 12px;
+  }
+
+  .app-container {
+    max-width: 100%;
+    gap: 16px;
+  }
+
+  .app-title {
+    font-size: 1.8rem;
+  }
+
+  .header-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .grid-layout {
+    grid-template-columns: 80px repeat(3, 100px);
+    grid-template-rows: 80px repeat(3, 100px);
+    gap: 6px;
+  }
+
+  .cell {
+    min-height: 100px;
+    min-width: 100px;
+    padding: 8px;
+  }
+
+  .criteria-header {
+    font-size: 0.7rem;
+    padding: 8px 4px;
+    min-height: 50px;
+  }
+
+  .entry img {
+    width: 56px;
+    height: 56px;
+  }
+
+  .entry .name {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  .floating-panel {
+    width: 95vw;
+    padding: 16px;
+  }
+
+  .suggestions {
+    max-height: 240px;
+  }
+
+  .suggestions li {
+    padding: 8px 12px;
+  }
+
+  .suggestions img {
+    width: 32px;
+    height: 32px;
+    margin-right: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid-layout {
+    grid-template-columns: 70px repeat(3, 85px);
+    grid-template-rows: 70px repeat(3, 85px);
+    gap: 4px;
+  }
+
+  .cell {
+    min-height: 85px;
+    min-width: 85px;
+    padding: 6px;
+  }
+
+  .entry img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .criteria-header {
+    font-size: 0.65rem;
+    padding: 6px 3px;
+  }
+
+  .search-tips {
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+}
+
+/* Loading States */
+.loading-container, .error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  gap: 16px;
+}
+
+.loading-spinner-large {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  font-size: 1.1rem;
   font-weight: 600;
+  color: var(--muted);
   margin: 0;
 }
-.floating-criteria-header {
-  font-weight: bold;
-  font-size: 1rem;
-  color: #222;
-  text-align: center;
-  padding: 4px 0;
-  border-bottom: 1px solid #eee;
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* Responsive adjustments */
-@media (max-width: 600px) {
-  .grid-layout { grid-template-columns: repeat(4, 80px); grid-template-rows: repeat(4, 80px); }
-  .cell { min-height: 80px; padding: 6px; }
-  .entry img { width: 48px; height: 48px; }
-  .criteria-header { font-size: 0.7rem; }
-  .floating-panel { width: 90%; }
+.error-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #dc2626;
+  margin: 0;
 }

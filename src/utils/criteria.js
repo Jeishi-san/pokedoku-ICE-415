@@ -1,85 +1,162 @@
 // src/utils/criteria.js
-
-import { getSpecialCategory } from "./specialPokemon";
+import { getSpecialCategory } from "./specialPokemon.js";
 
 /**
- * ✅ Checks whether a Pokémon matches a specific criterion (type, region, or special category)
- * @param {Object} pokemon - Pokémon data (types, region, is_legendary, is_mythical, category, etc.)
- * @param {Object} criterion - { kind: 'type' | 'region' | 'special', value: string }
- * @returns {boolean} true if Pokémon satisfies the criterion
+ * 🧩 Utility: Check if any aliases match a value
+ */
+function matchesAliases(value, key, aliases = []) {
+  const v = value.toLowerCase();
+  return v === key || aliases.includes(v);
+}
+
+/**
+ * ✅ Determines if a Pokémon matches a given criterion
+ * Unified for both frontend and backend data structures
+ *
+ * @param {Object} pokemon - Pokémon data (normalized)
+ * @param {Object} criterion - { kind: 'type' | 'region' | 'special' | 'stage' | 'evolution', value: string }
+ * @returns {boolean}
  */
 export function matchesCriterion(pokemon = {}, criterion = {}) {
-  if (!criterion.kind || !criterion.value) return true; // allow empty criteria
+  if (!criterion.kind || !criterion.value) return true;
+  if (!pokemon || typeof pokemon !== "object") return false;
 
-  const value = criterion.value.toString().toLowerCase().trim();
+  const value = criterion.value.toLowerCase().trim();
 
   switch (criterion.kind) {
-    /* ---------------------- 🔥 TYPE CRITERIA ---------------------- */
+    /* ---------------------------------------------------------------------- */
+    /* 🔥 TYPE                                                               */
+    /* ---------------------------------------------------------------------- */
     case "type": {
-      if (!Array.isArray(pokemon.types)) return false;
-      return pokemon.types.some((t) => t.toLowerCase() === value);
+      const types =
+        pokemon.types?.map((t) =>
+          typeof t === "string"
+            ? t.toLowerCase()
+            : t?.type?.name?.toLowerCase()
+        ) || [];
+
+      return types.includes(value);
     }
 
-    /* ---------------------- 🌍 REGION CRITERIA ---------------------- */
+    /* ---------------------------------------------------------------------- */
+    /* 🌍 REGION                                                             */
+    /* ---------------------------------------------------------------------- */
     case "region": {
-      if (!pokemon.region) return false;
-      const region = pokemon.region.toString().toLowerCase();
+      const region =
+        pokemon.region?.toLowerCase?.() ||
+        pokemon.generation?.toLowerCase?.() ||
+        "";
 
-      // Allow flexible region keyword matching (e.g. "gen-1" → "kanto")
+      if (!region) return false;
+
       const regionAliases = {
-        kanto: ["generation-i", "gen-1"],
-        johto: ["generation-ii", "gen-2"],
-        hoenn: ["generation-iii", "gen-3"],
-        sinnoh: ["generation-iv", "gen-4"],
-        unova: ["generation-v", "gen-5"],
-        kalos: ["generation-vi", "gen-6"],
-        alola: ["generation-vii", "gen-7"],
-        galar: ["generation-viii", "gen-8"],
-        paldea: ["generation-ix", "gen-9"],
+        kanto: ["generation-i", "gen-1", "1"],
+        johto: ["generation-ii", "gen-2", "2"],
+        hoenn: ["generation-iii", "gen-3", "3"],
+        sinnoh: ["generation-iv", "gen-4", "4"],
+        unova: ["generation-v", "gen-5", "5"],
+        kalos: ["generation-vi", "gen-6", "6"],
+        alola: ["generation-vii", "gen-7", "7"],
+        galar: ["generation-viii", "gen-8", "8"],
+        paldea: ["generation-ix", "gen-9", "9"],
       };
 
-      // Match either direct string or alias
-      return (
-        region.includes(value) ||
-        Object.entries(regionAliases).some(([key, aliases]) =>
-          key === value || aliases.includes(value)
-            ? region.includes(key) || aliases.some((a) => region.includes(a))
-            : false
-        )
+      return Object.entries(regionAliases).some(([key, aliases]) =>
+        matchesAliases(value, key, aliases)
+          ? region.includes(key)
+          : false
       );
     }
 
-    /* ---------------------- 🌟 SPECIAL CRITERIA ---------------------- */
+    /* ---------------------------------------------------------------------- */
+    /* 🌟 SPECIAL CATEGORY                                                   */
+    /* ---------------------------------------------------------------------- */
     case "special": {
-      const special = getSpecialCategory(pokemon.name);
-      const category = pokemon.category?.toLowerCase() || "";
-      const val = value.toLowerCase();
+      const computed = getSpecialCategory(pokemon.name);
+      const category = pokemon.category?.toLowerCase?.() || "";
+      const status = pokemon.status?.toLowerCase?.() || "";
 
-      // Handle well-known special flags
-      switch (val) {
-        case "legendary":
-          return !!pokemon.is_legendary || special === "legendary";
-        case "mythical":
-          return !!pokemon.is_mythical || special === "mythical";
-        case "fossil":
-          return special === "fossil" || category === "fossil";
-        case "starter":
-          return special === "starter" || category === "starter";
-        case "ultra-beast":
-        case "ultrabeast":
-          return special === "ultra-beast" || category === "ultra-beast";
-        case "paradox":
-          return special === "paradox" || category === "paradox";
-        case "baby":
-          return special === "baby" || category === "baby";
-        default:
-          return special === val || category === val;
-      }
+      const flags = {
+        legendary:
+          pokemon.is_legendary ||
+          category === "legendary" ||
+          computed === "legendary",
+        mythical:
+          pokemon.is_mythical ||
+          category === "mythical" ||
+          computed === "mythical",
+        starter:
+          category === "starter" || computed === "starter",
+        fossil:
+          category === "fossil" || computed === "fossil",
+        ultrabeast:
+          category === "ultra-beast" ||
+          category === "ultrabeast" ||
+          computed === "ultra-beast" ||
+          computed === "ultrabeast",
+        paradox:
+          category === "paradox" || computed === "paradox",
+        baby: category === "baby" || computed === "baby",
+      };
+
+      const val = value.replace(/\s+/g, "-");
+
+      return (
+        flags[val] ||
+        category.includes(val) ||
+        computed.includes(val) ||
+        status.includes(val)
+      );
     }
 
-    /* ---------------------- 🧩 DEFAULT ---------------------- */
+    /* ---------------------------------------------------------------------- */
+    /* 🧬 EVOLUTION STAGE                                                    */
+    /* ---------------------------------------------------------------------- */
+    case "stage": {
+      const stage = pokemon.stage?.toLowerCase?.() || "";
+      if (!stage) return false;
+
+      const stageAliases = {
+        "first stage": ["base", "first", "stage-1"],
+        "middle stage": ["middle", "second", "stage-2"],
+        "final stage": ["final", "last", "stage-3"],
+        "single stage": ["single", "only", "solo"],
+      };
+
+      return Object.entries(stageAliases).some(([key, aliases]) =>
+        matchesAliases(value, key, aliases)
+          ? stage.includes(key.split(" ")[0])
+          : false
+      );
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* 🧩 EVOLUTION DETAILS                                                  */
+    /* ---------------------------------------------------------------------- */
+    case "evolution": {
+      const evo = pokemon.evolution || {};
+      const val = value.toLowerCase();
+
+      // Position (Start / Middle / Final / Branched)
+      if (evo.position?.toLowerCase?.().includes(val)) return true;
+
+      // Method (Item / Trade / Level-up / Friendship / None)
+      if (evo.method?.toLowerCase?.().includes(val)) return true;
+      if (evo.evolvedBy?.toLowerCase?.().includes(val)) return true;
+
+      // Branching
+      if (typeof evo.isBranched === "boolean") {
+        if (val === "branched" && evo.isBranched) return true;
+        if (val === "not-branched" && !evo.isBranched) return true;
+      }
+
+      return false;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* 🧩 DEFAULT (no filtering)                                             */
+    /* ---------------------------------------------------------------------- */
     default:
-      // Unknown or unsupported criteria pass by default
       return true;
   }
 }
