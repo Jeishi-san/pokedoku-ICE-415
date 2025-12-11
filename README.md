@@ -1,7 +1,3 @@
-Here is a clean, professional `README.md` file for your Pokedoku project. It covers your tech stack, features, and the specific setup instructions we established during our debugging sessions.
-
------
-
 # 🧩 Pokedoku
 
 A full-stack Pokémon-themed logic puzzle game inspired by Sudoku. Players fill a 3x3 grid by selecting Pokémon that match specific criteria for each row and column (e.g., "Fire Type" + "Kanto Region").
